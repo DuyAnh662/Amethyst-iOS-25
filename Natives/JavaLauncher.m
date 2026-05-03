@@ -249,7 +249,12 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
             // workaround only applies to 1.20.2+
             glLibName = RENDERER_NAME_MTL_ANGLE;
         }
-        margv[++margc] = [NSString stringWithFormat:@"-Dorg.lwjgl.opengl.libname=%s", glLibName].UTF8String;
+        // libMoltenVK is a Vulkan loader, not a GL implementation; binding it as
+        // opengl.libname makes LWJGL fail looking up GL symbols. The Vulkan
+        // libname is set in PojavLauncher.java instead.
+        if (strcmp(glLibName, RENDERER_NAME_VULKAN) != 0) {
+            margv[++margc] = [NSString stringWithFormat:@"-Dorg.lwjgl.opengl.libname=%s", glLibName].UTF8String;
+        }
     }
 
     NSString *librariesPath = [NSString stringWithFormat:@"%@/libs", NSBundle.mainBundle.bundlePath];

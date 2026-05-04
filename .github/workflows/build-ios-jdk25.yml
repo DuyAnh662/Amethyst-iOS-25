@@ -70,25 +70,28 @@ jobs:
           BUILD_IOS: '1'
           TARGET_VERSION: '25'
           NDK_VERSION: r27c
+        shell: bash
         run: |
+          set -o pipefail
           export TARGET=aarch64-apple-ios
           export TARGET_JDK=aarch64
-          # The judge branch's globals
+          # tee swallowed the exit code last time; pipefail propagates it
           bash 2_ci_build_global.sh 2>&1 | tee build.log
 
-      - name: Show last 200 lines of build log on failure
-        if: failure()
+      - name: Show last 200 lines of build log
+        if: always()
         working-directory: openjdk-build
-        run: tail -200 build.log || true
+        run: tail -200 build.log 2>/dev/null || true
 
-      - name: Find rejected patches on failure
-        if: failure()
+      - name: Summarize rejected patches
+        if: always()
         working-directory: openjdk-build
         run: |
-          echo "=== rejected hunks ==="
-          find openjdk-25 -name "*.rej" 2>/dev/null | head -20 | while read f; do
-            echo "--- $f ---"
-            cat "$f"
+          REJ_COUNT=$(find openjdk-25 -name "*.rej" 2>/dev/null | wc -l | tr -d ' ')
+          echo "=== rejected hunks: $REJ_COUNT files ==="
+          find openjdk-25 -name "*.rej" 2>/dev/null | sort | head -50 | while read f; do
+            HUNK_COUNT=$(grep -c '^@@' "$f")
+            echo "  $f ($HUNK_COUNT hunks)"
           done
 
       - name: Find built JRE
@@ -114,10 +117,22 @@ jobs:
           path: openjdk-build/build.log
           if-no-files-found: ignore
 
-      - name: Upload rejected patches on failure
-        if: failure()
+      - name: Upload rejected patches (always, for analysis)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: rejected-patches
           path: openjdk-build/openjdk-25/**/*.rej
+          if-no-files-found: ignore
+
+      - name: Upload patched-but-unbuilt JDK 25 source tree (rejects + applied)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jdk25-patched-tree
+          path: |
+            openjdk-build/openjdk-25/src/hotspot/share/code/**
+            openjdk-build/openjdk-25/src/hotspot/share/runtime/atomic.hpp
+            openjdk-build/openjdk-25/src/hotspot/share/runtime/deoptimization.cpp
+            openjdk-build/openjdk-25/src/hotspot/share/memory/heap.hpp
           if-no-files-found: ignore

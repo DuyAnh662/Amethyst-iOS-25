@@ -268,9 +268,17 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
     margv[++margc] = "-XX:+UnlockExperimentalVMOptions";
     margv[++margc] = "-XX:+DisablePrimordialThreadGuardPages";
 
-    // On iOS 26, use mirror mapped JIT by default
+    // On iOS 26, use mirror mapped JIT by default — but only if the libjvm
+    // supports it. Our iOS-built JDK 25 (jre25-ios-v1) does NOT include the
+    // mirror_mapping HotSpot patch yet, so passing this flag makes the JVM
+    // bail out with "Unrecognized VM option". Skip for Java 25 until we
+    // port the mirror_mapping changes (Phase 2).
+    NSString *currentJavaHome = [NSString stringWithUTF8String:getenv("JAVA_HOME") ?: ""];
+    BOOL isJava25Home = [currentJavaHome containsString:@"java-25"];
     if (@available(iOS 26.0, *)) {
-        margv[++margc] = "-XX:+MirrorMappedCodeCache";
+        if (!isJava25Home) {
+            margv[++margc] = "-XX:+MirrorMappedCodeCache";
+        }
     }
 
     // Disable Forge 1.16.x early progress window

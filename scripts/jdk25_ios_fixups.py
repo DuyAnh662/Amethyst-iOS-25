@@ -175,5 +175,59 @@ patch('src/hotspot/os_cpu/bsd_aarch64/icache_bsd_aarch64.hpp', [
      "  static void initialize(int phase);\n#if defined(__APPLE__) && defined(__arm64__)\n  static void __clear_cache_(void *start, void *end) {\n    sys_icache_invalidate(start, (char *)end - (char *)start);\n  }\n#else\n  #define __clear_cache_ __clear_cache\n#endif\n  static void invalidate_word(address addr) {\n    __clear_cache_((char *)addr, (char *)(addr + 4));\n  }\n  static void invalidate_range(address start, int nbytes) {\n    __clear_cache_((char *)start, (char *)(start + nbytes));\n  }"),
 ])
 
+# 14. AwtLibraries.gmk — JDK 25 renamed Awt2dLibraries.gmk to AwtLibraries.gmk.
+#     The libjawt source for macOS lives in src/java.desktop/macosx which
+#     6_buildjdk.sh moves to macosx_NOTIOS at build time, so SetupJdkLibrary
+#     fails with "No sources found for BUILD_LIBJAWT". Wrap the SetupJdkLibrary
+#     call AND the TARGETS line in a macosx_NOTIOS guard so iOS skips libjawt
+#     entirely (Pojav iOS uses GLFW + LWJGL directly, no AWT needed).
+def patch_awtlibraries():
+    p = Path('make/modules/java.desktop/lib/AwtLibraries.gmk')
+    if not p.exists():
+        print(f"  [WARN] missing file: {p}")
+        return
+    s = original = p.read_text()
+    if 'libjawt disabled for iOS' in s:
+        print(f"  {p}: skip (already patched)")
+        return
+    old_block = (
+        "$(eval $(call SetupJdkLibrary, BUILD_LIBJAWT, \\\n"
+        "    NAME := jawt, \\\n"
+        "    EXCLUDE_SRC_PATTERNS := $(LIBJAWT_EXCLUDE_SRC_PATTERNS), \\\n"
+        "    OPTIMIZATION := LOW, \\\n"
+        "    CFLAGS := $(LIBJAWT_CFLAGS), \\\n"
+        "    CFLAGS_windows := -EHsc -DUNICODE -D_UNICODE, \\\n"
+        "    CXXFLAGS_windows := -EHsc -DUNICODE -D_UNICODE, \\\n"
+        "    DISABLED_WARNINGS_clang_jawt.m := sign-compare, \\\n"
+        "    EXTRA_HEADER_DIRS := $(LIBJAWT_EXTRA_HEADER_DIRS), \\\n"
+        "    LDFLAGS_windows := $(LDFLAGS_CXX_JDK), \\\n"
+        "    LDFLAGS_macosx := -Wl$(COMMA)-rpath$(COMMA)@loader_path, \\\n"
+        "    JDK_LIBS_unix := $(LIBJAWT_JDK_LIBS_unix), \\\n"
+        "    JDK_LIBS_windows := libawt, \\\n"
+        "    JDK_LIBS_macosx := libawt_lwawt, \\\n"
+        "    LIBS_macosx := -framework Cocoa, \\\n"
+        "    LIBS_windows := advapi32.lib $(LIBJAWT_LIBS_windows), \\\n"
+        "))\n"
+        "\n"
+        "TARGETS += $(BUILD_LIBJAWT)"
+    )
+    if old_block not in s:
+        print(f"  {p}: WARN libjawt block not found verbatim")
+        global warn
+        warn += 1
+        return
+    new_block = (
+        "# libjawt disabled for iOS — no AWT support, src/java.desktop/macosx moved out\n"
+        "ifeq ($(call isTargetOs, macosx_NOTIOS), true)\n"
+        + old_block + "\n"
+        "endif"
+    )
+    s = s.replace(old_block, new_block, 1)
+    p.write_text(s)
+    print(f"  {p}: ok:guard-libjawt-on-ios")
+    global ok
+    ok += 1
+patch_awtlibraries()
+
 print(f"\nfixups: ok={ok} skip={skip} warn={warn}")
 sys.exit(1 if warn > 0 else 0)

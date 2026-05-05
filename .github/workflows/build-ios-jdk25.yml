@@ -69,6 +69,36 @@ jobs:
           chmod +x ios-arm64-clang ios-arm64-clang++ macos-host-cc
           chmod +x *.sh
 
+      - name: Pre-scan JDK 25 source for known-bad iOS patterns
+        working-directory: openjdk-build
+        run: |
+          # Static analysis catches iOS-incompatible includes / API calls
+          # before we burn 13 min compiling. Doesn't replace fixups — it's
+          # a heads-up so we know what to expect / pre-empt.
+          if [ ! -d openjdk-25 ]; then
+            # source is cloned later in the build; just clone now to scan
+            git clone --depth 1 --branch jdk-25.0.1+8 https://github.com/openjdk/jdk25u openjdk-25
+          fi
+          echo "=== files including <mach/mach_vm.h> ==="
+          grep -rn '#include\s*<mach/mach_vm.h>' openjdk-25/src 2>/dev/null | head -10 || echo "(none)"
+          echo ""
+          echo "=== files including <sys/proc_info.h> ==="
+          grep -rn '#include\s*<sys/proc_info.h>' openjdk-25/src 2>/dev/null | head -10 || echo "(none)"
+          echo ""
+          echo "=== mach_vm_* call sites (potential iOS issue) ==="
+          grep -rn 'mach_vm_allocate\|mach_vm_deallocate\|mach_vm_protect' openjdk-25/src 2>/dev/null | head -10 || echo "(none)"
+          echo ""
+          echo "=== files with __APPLE__ guard but no TARGET_OS_IPHONE ==="
+          # crude heuristic — files that test __APPLE__ but never mention iOS
+          for f in $(grep -rln '__APPLE__' openjdk-25/src 2>/dev/null); do
+            if ! grep -q 'TARGET_OS_IPHONE\|TARGET_OS_OSX' "$f" 2>/dev/null; then
+              # filter to files in macOS/BSD-specific paths (more likely to fail)
+              case "$f" in
+                */os/bsd/*|*macosx*|*_bsd*) echo "  $f" ;;
+              esac
+            fi
+          done | head -20
+
       - name: Patch OpenJDK build script (tolerate rejects + run our fixups)
         working-directory: openjdk-build
         run: |
@@ -101,6 +131,15 @@ jobs:
           marker = '# rm -rf build'
           assert marker in s, "could not find injection point"
           s = s.replace(marker, inject + marker)
+
+          # 3. Use `make -k` (keep going) so a single failure doesn't stop
+          #    the whole build — we surface ALL iOS-incompatible spots in one
+          #    run instead of iterating one-error-at-a-time.
+          old_make = 'make JOBS=$jobs images || \\'
+          new_make = 'make JOBS=$jobs -k images || \\'
+          if old_make in s:
+              s = s.replace(old_make, new_make)
+              print("OK: enabled make -k (keep going on errors)")
 
           with open('6_buildjdk.sh','w') as f: f.write(s)
           print("OK: patched 6_buildjdk.sh")

@@ -289,7 +289,11 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
     NSString *libjlipath11 = [NSString stringWithFormat:@"%@/lib/libjli.dylib", javaHome]; // java 11+
     BOOL isJava8 = [fm fileExistsAtPath:libjlipath8];
     setenv("INTERNAL_JLI_PATH", (isJava8 ? libjlipath8 : libjlipath11).UTF8String, 1);
+    NSLog(@"[Bisect] About to dlopen libjli at %s", getenv("INTERNAL_JLI_PATH"));
+    fflush(stdout); fflush(stderr);
     void* libjli = dlopen(getenv("INTERNAL_JLI_PATH"), RTLD_GLOBAL);
+    NSLog(@"[Bisect] dlopen returned %p", libjli);
+    fflush(stdout); fflush(stderr);
 
     if (!libjli) {
         const char *error = dlerror();

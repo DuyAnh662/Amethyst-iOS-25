@@ -237,6 +237,11 @@ patch('make/modules/java.desktop/lib/ClientLibraries.gmk', [
     ("skip-libosxui-on-ios",
      "TARGETS += $(BUILD_LIBFONTMANAGER)\n\nifeq ($(call isTargetOs, macosx), true)\n  ##############################################################################\n  ## Build libosxui",
      "TARGETS += $(BUILD_LIBFONTMANAGER)\n\nifeq ($(call isTargetOs, macosx_NOTIOS), true)\n  ##############################################################################\n  ## Build libosxui"),
+    # libfontmanager's macOS variant pulled libawt_lwawt; on iOS we only have
+    # libawt_headless (libawt_lwawt is skipped). JDK 21 patch did the same swap.
+    ("libfontmanager-headless-on-ios",
+     "    JDK_LIBS_macosx := libawt_lwawt, \\",
+     "    JDK_LIBS_macosx := libawt_headless, \\"),
 ])
 
 # 16. AwtLibraries.gmk — port the JDK 21 patch's libawt/lwawt iOS strategy:

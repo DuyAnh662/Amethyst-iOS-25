@@ -108,15 +108,34 @@ jobs:
           python3 << 'PYEOF'
           with open('6_buildjdk.sh','r') as f: s = f.read()
 
-          # 1. Make git apply tolerant. ALSO fall back to GNU patch with
-          #    high fuzz factor (-F 100 --ignore-whitespace) for hunks
-          #    git apply rejects because of line shifts but with matching
-          #    context — patch can usually find them. This eats most of
-          #    the mirror_mapping rejections automatically.
+          # 1. Make git apply tolerant on rejects (the upstream `|| exit 1`
+          #    aborts the whole build before our fixup script can run).
           old_apply = 'git apply --reject --whitespace=fix {} || (echo "git apply failed (iOs patch set)" && exit 1)'
-          new_apply = '(git apply --reject --whitespace=fix {} 2>&1 | tee /tmp/git_apply.log; for r in $(find . -name "*.rej"); do echo "[fuzz-fallback] retrying with patch -F 100 for ${r%.rej}"; patch -p1 -F 100 --ignore-whitespace < "$r" 2>&1 || true; done; rm -f $(find . -name "*.rej") 2>/dev/null; git apply --reject --whitespace=fix {} 2>/dev/null || echo "round 2 of git apply: any remaining rejects -> fixup script")'
+          new_apply = 'git apply --reject --whitespace=fix {} || echo "git apply had rejects (fuzz-fallback + fixup script will handle)"'
           assert old_apply in s, "could not find git apply line to patch"
           s = s.replace(old_apply, new_apply)
+
+          # 1b. Insert a fuzz-fallback pass AFTER all patches have been
+          #     git-applied. For each .rej file, retry with GNU patch -F 100
+          #     --ignore-whitespace which tolerates line shifts. patch is
+          #     mature; finds shifted hunks via context matching. This
+          #     auto-resolves the bulk of mirror_mapping rejections.
+          fuzz_marker = "echo \"Applying {}\" && git apply"
+          # Find the line containing the xargs invocation and insert AFTER it
+          import re
+          xargs_line_re = re.compile(r"^([ \t]*)find \.\./patches/jre.*\.diff.*xargs.*$", re.MULTILINE)
+          m = xargs_line_re.search(s)
+          assert m, "could not locate xargs patch-apply line"
+          indent = m.group(1)
+          fuzz_block = (
+              "\n" + indent + "# Fuzz-fallback: try patch -F 100 on each .rej from git apply\n" +
+              indent + "for r in $(find . -name '*.rej' 2>/dev/null); do\n" +
+              indent + "  echo \"[fuzz-fallback] retrying ${r%.rej}\"\n" +
+              indent + "  patch -p1 -F 100 --ignore-whitespace < \"$r\" 2>&1 | tail -3 || echo \"  still failed\"\n" +
+              indent + "done\n" +
+              indent + "find . -name '*.rej' -delete 2>/dev/null || true\n"
+          )
+          s = s[:m.end()] + fuzz_block + s[m.end():]
 
           # 2. Inject our fixup script call AFTER the git-apply step and AFTER
           #    the macOS-desktop hack that mv's macosx out of the way. The

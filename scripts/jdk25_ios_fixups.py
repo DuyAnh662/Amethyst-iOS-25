@@ -270,5 +270,26 @@ patch('make/modules/java.desktop/lib/AwtLibraries.gmk', [
      "ifeq ($(call isTargetOs, macosx_NOTIOS), true)\n  ##############################################################################\n  ## Build libawt_lwawt"),
 ])
 
+# 17. JDK 21 patch swapped pthread_jit_write_protect_np() for jit_write_protect()
+#     defined in tcg-apple-jit.h, which uses APRR (Apple's old W^X mechanism).
+#     APRR is disabled on iPhone 17 / iOS 26 / A19 Pro (TXM hardware enforcement
+#     replaced it). On these devices jit_write_protect() reads
+#     _COMM_PAGE_APRR_SUPPORT, gets 0, and returns as a no-op — JIT pages
+#     never transition to executable, SIGBUS at first call_stub.
+#
+#     crystall1ne's build doesn't hit this because they ALSO have patch 2
+#     (mirror_mapping) which handles W^X via dual virtual mappings, making
+#     jit_write_protect's no-op irrelevant.
+#
+#     Without porting full mirror_mapping (Phase 2 work), substitute the
+#     standard Apple API pthread_jit_write_protect_np() back in. It works
+#     correctly on iOS 26 + TXM when the process holds JIT entitlement
+#     (StikDebug provides this). Also include <pthread.h> for the prototype.
+patch('src/hotspot/os/bsd/os_bsd.cpp', [
+    ("use-pthread-jit-instead-of-aprr",
+     "void os::current_thread_enable_wx(WXMode mode) {\n  if (os::Bsd::isRWXJITAvailable()) {\n    jit_write_protect(mode == WXExec);\n  }",
+     "void os::current_thread_enable_wx(WXMode mode) {\n  // jit_write_protect (APRR-based, from tcg-apple-jit.h) is a no-op on\n  // iOS 26 / TXM devices because _COMM_PAGE_APRR_SUPPORT returns 0. Use\n  // pthread_jit_write_protect_np instead — Apple's standard W^X toggle,\n  // which works on iOS 26 with JIT entitlement.\n  if (os::Bsd::isRWXJITAvailable()) {\n    pthread_jit_write_protect_np(mode == WXExec);\n  }"),
+])
+
 print(f"\nfixups: ok={ok} skip={skip} warn={warn}")
 sys.exit(1 if warn > 0 else 0)

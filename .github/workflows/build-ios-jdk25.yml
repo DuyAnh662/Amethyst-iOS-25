@@ -108,11 +108,13 @@ jobs:
           python3 << 'PYEOF'
           with open('6_buildjdk.sh','r') as f: s = f.read()
 
-          # 1. Make git apply tolerant: it returns non-zero on any reject (which
-          #    is normal with --reject), and the original `|| exit 1` aborts the
-          #    whole build before our fixup script can run. Replace with `|| true`.
+          # 1. Make git apply tolerant. ALSO fall back to GNU patch with
+          #    high fuzz factor (-F 100 --ignore-whitespace) for hunks
+          #    git apply rejects because of line shifts but with matching
+          #    context — patch can usually find them. This eats most of
+          #    the mirror_mapping rejections automatically.
           old_apply = 'git apply --reject --whitespace=fix {} || (echo "git apply failed (iOs patch set)" && exit 1)'
-          new_apply = 'git apply --reject --whitespace=fix {} || echo "git apply had rejects (expected, fixup script will handle)"'
+          new_apply = '(git apply --reject --whitespace=fix {} 2>&1 | tee /tmp/git_apply.log; for r in $(find . -name "*.rej"); do echo "[fuzz-fallback] retrying with patch -F 100 for ${r%.rej}"; patch -p1 -F 100 --ignore-whitespace < "$r" 2>&1 || true; done; rm -f $(find . -name "*.rej") 2>/dev/null; git apply --reject --whitespace=fix {} 2>/dev/null || echo "round 2 of git apply: any remaining rejects -> fixup script")'
           assert old_apply in s, "could not find git apply line to patch"
           s = s.replace(old_apply, new_apply)
 

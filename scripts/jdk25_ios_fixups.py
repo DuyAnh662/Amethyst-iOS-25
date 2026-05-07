@@ -285,7 +285,7 @@ patch('make/modules/java.desktop/lib/AwtLibraries.gmk', [
 #     standard Apple API pthread_jit_write_protect_np() back in. It works
 #     correctly on iOS 26 + TXM when the process holds JIT entitlement
 #     (StikDebug provides this). Also include <pthread.h> for the prototype.
-patch('src/hotspot/os/bsd/os_bsd.cpp', [
+patch('src/hotspot/os_cpu/bsd_aarch64/os_bsd_aarch64.cpp', [
     ("use-pthread-jit-instead-of-aprr",
      "void os::current_thread_enable_wx(WXMode mode) {\n  if (os::Bsd::isRWXJITAvailable()) {\n    jit_write_protect(mode == WXExec);\n  }",
      "void os::current_thread_enable_wx(WXMode mode) {\n  // jit_write_protect (APRR-based, from tcg-apple-jit.h) is a no-op on\n  // iOS 26 / TXM devices because _COMM_PAGE_APRR_SUPPORT returns 0. Use\n  // pthread_jit_write_protect_np instead — Apple's standard W^X toggle,\n  // which works on iOS 26 with JIT entitlement.\n  if (os::Bsd::isRWXJITAvailable()) {\n    pthread_jit_write_protect_np(mode == WXExec);\n  }"),

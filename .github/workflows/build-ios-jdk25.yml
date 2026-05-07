@@ -47,16 +47,19 @@ jobs:
           xcrun --sdk iphoneos --show-sdk-path
           xcrun --sdk iphoneos --show-sdk-version
 
-      - name: Stage iOS-21 base patch into iOS-25 slot (skip mirror_mapping)
+      - name: Stage both iOS patches (base + mirror_mapping) for JDK 25
         working-directory: openjdk-build
         run: |
           mkdir -p patches/jre_25/ios
-          # Phase 1: only the base iOS patch. Skip 2_mirror_mapping.diff (JIT
-          # support) — most of its hunks are in HotSpot share/code which moved
-          # heavily between JDK 21 and 25. JVM will run interpreted (-Xint
-          # slow) but functional. Mirror mapping comes back as a separate
-          # phase once the base build is green.
+          # Phase 2: apply BOTH patches. mirror_mapping is required for
+          # JIT to work on iOS 26 + TXM (iPhone 17 / A19 Pro). Without
+          # it, code pages allocated via MAP_JIT can't transition to
+          # executable (APRR is disabled on TXM, pthread_jit_write_protect_np
+          # is marked unavailable in the iOS SDK). Mirror mapping uses
+          # vm_remap-based dual mappings instead — same approach
+          # crystall1ne uses for working JDK 21 on iOS 26.
           cp patches/jre_21/ios/1_jdk21u_ios.diff patches/jre_25/ios/
+          cp patches/jre_21/ios/2_mirror_mapping.diff patches/jre_25/ios/
           # Allow our own override / extension patches
           if [ -d ../amethyst/scripts/jdk25_ios_patches ]; then
             cp ../amethyst/scripts/jdk25_ios_patches/*.diff patches/jre_25/ios/ 2>/dev/null || true

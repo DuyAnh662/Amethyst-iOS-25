@@ -336,6 +336,48 @@ patch('src/hotspot/share/code/nmethod.hpp', [
     ("set-is-unlinked-mirror-w-set",
      "     assert(!_is_unlinked, \"already unlinked\");\n      _is_unlinked = true;",
      "     assert(!_is_unlinked, \"already unlinked\");\n      mirror_w_set(_is_unlinked) = true;"),
+    # The other 5 setters that write directly to (now byte-sized) flag fields
+    # without mirror_w_set. v5 confirmed this SIGBUSes inside ciEnv::register_method
+    # at +0x5fc when the JIT compiler does `nm->set_has_unsafe_access(...)` etc.
+    # nmethod returned from new_nmethod is mirror_x (the JDK 21 hunk
+    # `nm = mirror_x(nm);` DID apply via git apply), so writes through `this`
+    # need explicit mirror_w_set on iOS 26+TXM where mirror_w/x are different
+    # virtual mappings (vs APRR-based JDK 21 path where they were one RWX page).
+    ("set-has-unsafe-access-mirror-w-set",
+     "  void  set_has_unsafe_access(bool z)             { _has_unsafe_access = z; }",
+     "  void  set_has_unsafe_access(bool z)             { mirror_w_set(_has_unsafe_access) = z; }"),
+    ("set-has-monitors-mirror-w-set",
+     "  void  set_has_monitors(bool z)                  { _has_monitors = z; }",
+     "  void  set_has_monitors(bool z)                  { mirror_w_set(_has_monitors) = z; }"),
+    ("set-has-scoped-access-mirror-w-set",
+     "  void  set_has_scoped_access(bool z)             { _has_scoped_access = z; }",
+     "  void  set_has_scoped_access(bool z)             { mirror_w_set(_has_scoped_access) = z; }"),
+    ("set-has-method-handle-invokes-mirror-w-set",
+     "  void  set_has_method_handle_invokes(bool z)     { _has_method_handle_invokes = z; }",
+     "  void  set_has_method_handle_invokes(bool z)     { mirror_w_set(_has_method_handle_invokes) = z; }"),
+    ("set-has-wide-vectors-mirror-w-set",
+     "  void  set_has_wide_vectors(bool z)              { _has_wide_vectors = z; }",
+     "  void  set_has_wide_vectors(bool z)              { mirror_w_set(_has_wide_vectors) = z; }"),
+    # Other inline setters that write nmethod fields directly. set_method is
+    # called from register_method right after make_in_use, set_osr_link is
+    # called by add_osr_nmethod for OSR compiles, set_gc_data is called by GC.
+    ("set-method-mirror-w-set",
+     "  void set_method(Method* method) { _method = method; }",
+     "  void set_method(Method* method) { mirror_w_set(_method) = method; }"),
+    ("set-osr-link-mirror-w-set",
+     "  void     set_osr_link(nmethod *n) { _osr_link = n; }",
+     "  void     set_osr_link(nmethod *n) { mirror_w_set(_osr_link) = n; }"),
+])
+
+# 29. nmethod.cpp try_transition uses Atomic::store(&_state, ...). The address
+#     `&_state` is derived from `this`, which is mirror_x'd after the JDK 21
+#     `nm = mirror_x(nm)` hunk applied via git apply. On TXM the X-mirror is
+#     RX-only so the atomic store SIGBUSes. Wrap with mirror_w() on the &_state
+#     so it points into the W-mirror.
+patch('src/hotspot/share/code/nmethod.cpp', [
+    ("try-transition-atomic-store-mirror-w",
+     "  Atomic::store(&_state, new_state);",
+     "  Atomic::store(mirror_w(&_state), new_state);"),
 ])
 
 # 19. codeBlob.cpp: 3 hunks the JDK 21 mirror_mapping patch couldn't place

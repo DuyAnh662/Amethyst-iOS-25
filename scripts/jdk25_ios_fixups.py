@@ -552,6 +552,81 @@ patch('src/hotspot/share/runtime/deoptimization.cpp', [
      "  mirror_w(nm)->_deoptimization_generation = DeoptimizationScope::_active_deopt_gen;"),
 ])
 
+# 27. codeBlob.cpp operator new wraps for the OTHER code-cache CodeBlob
+#     subclasses (BufferBlob is already wrapped in fixup #19). v4 SIGBUS'd
+#     here:
+#       SIGBUS at pc=..., si_addr=0x14fef2e08 (BUS_ADRALN)
+#       V  CodeBlob::CodeBlob(name,kind,CodeBuffer*,size,...)+0x40
+#       V  RuntimeStub::new_runtime_stub+0x1a0
+#       V  SharedRuntime::generate_throw_exception+0x38c
+#       V  SharedRuntime::generate_initial_stubs+0x18
+#       V  init_globals+0x60
+#     RuntimeStub::operator new returned the raw CodeCache::allocate result
+#     (X-only mirror), so placement-new at that address tried to write the
+#     CodeBlob's member init list through RX → BUS_ADRALN. JDK 25 simplified
+#     RuntimeStub::operator new to a single-line `return CodeCache::allocate`
+#     (no `if (!p) fatal` like JDK 21), and added `bool alloc_fail_is_fatal`
+#     to SingletonBlob's signature. The JDK 21 mirror_mapping hunks for both
+#     don't match JDK 25 verbatim. Same need for VtableBlob (3rd arg
+#     `handle_alloc_failure` added in JDK 25) and UpcallStub (new in JDK 25).
+patch('src/hotspot/share/code/codeBlob.cpp', [
+    ("runtimestub-operator-new-mirror-w",
+     "void* RuntimeStub::operator new(size_t s, unsigned size) throw() {\n"
+     "  return CodeCache::allocate(size, CodeBlobType::NonNMethod);\n"
+     "}",
+     "void* RuntimeStub::operator new(size_t s, unsigned size) throw() {\n"
+     "  return mirror_w(CodeCache::allocate(size, CodeBlobType::NonNMethod));\n"
+     "}"),
+    ("singletonblob-operator-new-mirror-w",
+     "void* SingletonBlob::operator new(size_t s, unsigned size, bool alloc_fail_is_fatal) throw() {\n"
+     "  void* p = CodeCache::allocate(size, CodeBlobType::NonNMethod);\n"
+     "  if (alloc_fail_is_fatal && !p) fatal(\"Initial size of CodeCache is too small\");\n"
+     "  return p;\n"
+     "}",
+     "void* SingletonBlob::operator new(size_t s, unsigned size, bool alloc_fail_is_fatal) throw() {\n"
+     "  void* p = CodeCache::allocate(size, CodeBlobType::NonNMethod);\n"
+     "  if (alloc_fail_is_fatal && !p) fatal(\"Initial size of CodeCache is too small\");\n"
+     "  return mirror_w(p);\n"
+     "}"),
+    ("vtableblob-operator-new-mirror-w",
+     "  return CodeCache::allocate(size, CodeBlobType::NonNMethod, false /* handle_alloc_failure */);\n"
+     "}",
+     "  return mirror_w(CodeCache::allocate(size, CodeBlobType::NonNMethod, false /* handle_alloc_failure */));\n"
+     "}"),
+    ("upcallstub-operator-new-mirror-w",
+     "void* UpcallStub::operator new(size_t s, unsigned size) throw() {\n"
+     "  return CodeCache::allocate(size, CodeBlobType::NonNMethod);\n"
+     "}",
+     "void* UpcallStub::operator new(size_t s, unsigned size) throw() {\n"
+     "  return mirror_w(CodeCache::allocate(size, CodeBlobType::NonNMethod));\n"
+     "}"),
+])
+
+# 28. nmethod.cpp operator new wraps. Both overloads return raw CodeCache
+#     pointers. Once JIT compilation starts, nmethod::operator new is called
+#     to allocate compiled-method bodies in code cache. Without mirror_w,
+#     placement-new constructor writes to RX → BUS_ADRALN, identical to the
+#     v4 RuntimeStub failure. Wrap both overloads now so v5 makes it past
+#     not just initial stubs but also the first JIT compile.
+patch('src/hotspot/share/code/nmethod.cpp', [
+    ("nmethod-operator-new-1-mirror-w",
+     "void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) throw () {\n"
+     "  return CodeCache::allocate(nmethod_size, CodeCache::get_code_blob_type(comp_level));\n"
+     "}",
+     "void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) throw () {\n"
+     "  return mirror_w(CodeCache::allocate(nmethod_size, CodeCache::get_code_blob_type(comp_level)));\n"
+     "}"),
+    ("nmethod-operator-new-2-mirror-w",
+     "  void* return_value = CodeCache::allocate(nmethod_size, CodeBlobType::MethodNonProfiled);\n"
+     "  if (return_value != nullptr || !allow_NonNMethod_space) return return_value;\n"
+     "  // Try NonNMethod or give up.\n"
+     "  return CodeCache::allocate(nmethod_size, CodeBlobType::NonNMethod);",
+     "  void* return_value = CodeCache::allocate(nmethod_size, CodeBlobType::MethodNonProfiled);\n"
+     "  if (return_value != nullptr || !allow_NonNMethod_space) return mirror_w(return_value);\n"
+     "  // Try NonNMethod or give up.\n"
+     "  return mirror_w(CodeCache::allocate(nmethod_size, CodeBlobType::NonNMethod));"),
+])
+
 # NOTE: pthread_jit_write_protect_np is marked "unavailable: not available on iOS"
 # in the iOS SDK headers, AND it shares the underlying APRR mechanism with
 # tcg-apple-jit.h's jit_write_protect — both no-op on TXM devices like iPhone 17.

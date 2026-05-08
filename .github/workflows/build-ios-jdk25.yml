@@ -127,15 +127,18 @@ jobs:
           m = xargs_line_re.search(s)
           assert m, "could not locate xargs patch-apply line"
           indent = m.group(1)
+          # Single triple-quoted string so I can't accidentally break the
+          # concat with stray comments. apply_rejs.py runs AFTER patch -F
+          # 100 fuzz pass to pick up hunks neither got automatically.
           fuzz_block = (
-              "\n" + indent + "# Fuzz-fallback: try patch -F 100 on each .rej from git apply\n" +
-              indent + "for r in $(find . -name '*.rej' 2>/dev/null); do\n" +
-              indent + "  echo \"[fuzz-fallback] retrying ${r%.rej}\"\n" +
-              indent + "  patch -p1 -F 100 --ignore-whitespace < \"$r\" 2>&1 | tail -3 || echo \"  still failed\"\n" +
-              indent + "done\n" +
-              # Run our own .rej applier — context-based find/replace, more\n" +
-              # aggressive than `patch` because it searches the whole file.\n" +
-              indent + "python3 ../../amethyst/scripts/apply_rejs.py . || true\n"
+              f"\n"
+              f"{indent}# Fuzz-fallback: try patch -F 100 on each .rej from git apply\n"
+              f"{indent}for r in $(find . -name '*.rej' 2>/dev/null); do\n"
+              f"{indent}  echo \"[fuzz-fallback] retrying ${{r%.rej}}\"\n"
+              f"{indent}  patch -p1 -F 100 --ignore-whitespace < \"$r\" 2>&1 | tail -3 || echo \"  still failed\"\n"
+              f"{indent}done\n"
+              f"{indent}echo \"=== apply_rejs.py: aggressive context-shrink applier ===\"\n"
+              f"{indent}python3 ../../amethyst/scripts/apply_rejs.py . || echo \"apply_rejs.py exited non-zero\"\n"
           )
           s = s[:m.end()] + fuzz_block + s[m.end():]
 

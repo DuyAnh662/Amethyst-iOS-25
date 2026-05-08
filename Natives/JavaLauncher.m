@@ -276,9 +276,10 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
     NSString *currentJavaHome = [NSString stringWithUTF8String:getenv("JAVA_HOME") ?: ""];
     BOOL isJava25Home = [currentJavaHome containsString:@"java-25"];
     if (@available(iOS 26.0, *)) {
-        if (!isJava25Home) {
-            margv[++margc] = "-XX:+MirrorMappedCodeCache";
-        }
+        // jre25-ios-v2 includes the mirror_mapping HotSpot patch, so we can
+        // enable the flag for Java 25 too. Older Java 25 builds (v1) lacked
+        // it; keeping the suffix check harmless since v2 supports the flag.
+        margv[++margc] = "-XX:+MirrorMappedCodeCache";
     }
 
     // Disable Forge 1.16.x early progress window

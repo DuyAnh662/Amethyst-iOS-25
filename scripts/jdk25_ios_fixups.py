@@ -499,6 +499,18 @@ patch('src/hotspot/share/code/codeBlob.cpp', [
      "  mirror_w_set(_mutable_data) = nullptr;"),
 ])
 
+# 35. nmethod::purge JVMCI_ONLY(_metadata_size = 0). v9 disassembly of the
+#     v9 SIGBUS at nmethod::purge+0x2a0 = `strh wzr, [x20, #0xbe]` confirmed
+#     this is the crashing site — uint16_t zero-store at offset 0xbe of
+#     nmethod. INCLUDE_JVMCI is enabled in our build (default for server VM
+#     on aarch64), so the JVMCI_ONLY line DOES compile. The unwrapped store
+#     hits RX → BUS_ADRALN.
+patch('src/hotspot/share/code/nmethod.cpp', [
+    ("purge-jvmci-metadata-size-mirror-w-set",
+     "  JVMCI_ONLY( _metadata_size = 0; )",
+     "  JVMCI_ONLY( mirror_w_set(_metadata_size) = 0; )"),
+])
+
 # 19. codeBlob.cpp: 3 hunks the JDK 21 mirror_mapping patch couldn't place
 #     because JDK 25 changed BufferBlob/AdapterBlob constructor signatures
 #     (CodeBlobKind enum added) and operator-new arg list. Surgical replacements:

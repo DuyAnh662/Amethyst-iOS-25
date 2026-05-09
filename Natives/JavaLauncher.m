@@ -281,7 +281,13 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
     // it collides at dyld registration because both share the install_name
     // @rpath/libspirv-cross-c-shared.0.dylib. Reusing the already-loaded
     // C library avoids the duplicate.
-    margv[++margc] = "-Dorg.lwjgl.spvc.libname=libspirv-cross-c-shared.0.dylib";
+    //
+    // NOTE: LWJGL's Library.loadNative passes the configured libname through
+    // Platform.mapLibraryNameBundled which on macOS prefixes "lib" and
+    // suffixes ".dylib". Pass just the base name "spirv-cross-c-shared.0"
+    // so the result is libspirv-cross-c-shared.0.dylib (not
+    // liblibspirv-cross-c-shared.0.dylib.dylib).
+    margv[++margc] = "-Dorg.lwjgl.spvc.libname=spirv-cross-c-shared.0";
 
     NSString *librariesPath = [NSString stringWithFormat:@"%@/libs", NSBundle.mainBundle.bundlePath];
     margv[++margc] = [NSString stringWithFormat:@"-javaagent:%@/patchjna_agent.jar=", librariesPath].UTF8String;

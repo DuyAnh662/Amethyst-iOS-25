@@ -274,6 +274,15 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
         margv[++margc] = [NSString stringWithFormat:@"-Dorg.lwjgl.opengl.libname=%s", openglLibName].UTF8String;
     }
 
+    // Point LWJGL spvc bindings at libspirv-cross-c-shared.0.dylib (the one
+    // MobileGlues ships and that's already loaded into the process by the
+    // time spvc.<clinit> runs). LWJGL's default would be to dlopen
+    // "libspirv-cross.dylib"; if we ship a separate file with that filename
+    // it collides at dyld registration because both share the install_name
+    // @rpath/libspirv-cross-c-shared.0.dylib. Reusing the already-loaded
+    // C library avoids the duplicate.
+    margv[++margc] = "-Dorg.lwjgl.spvc.libname=libspirv-cross-c-shared.0.dylib";
+
     NSString *librariesPath = [NSString stringWithFormat:@"%@/libs", NSBundle.mainBundle.bundlePath];
     margv[++margc] = [NSString stringWithFormat:@"-javaagent:%@/patchjna_agent.jar=", librariesPath].UTF8String;
     if(getPrefBool(@"general.cosmetica")) {

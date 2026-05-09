@@ -253,9 +253,21 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
         // libMoltenVK is a Vulkan loader, not a GL implementation; binding it as
         // opengl.libname makes LWJGL fail looking up GL symbols. The Vulkan
         // libname is set in PojavLauncher.java instead.
-        if (strcmp(glLibName, RENDERER_NAME_VULKAN) != 0) {
-            margv[++margc] = [NSString stringWithFormat:@"-Dorg.lwjgl.opengl.libname=%s", glLibName].UTF8String;
-        }
+        //
+        // BUT: Minecraft 26.2's NativeLibrariesBootstrap.loadOpenGL() initializes
+        // org.lwjgl.opengl.GL during startup REGARDLESS of which renderer the
+        // game ultimately uses. With opengl.libname unset, LWJGL falls back to
+        // MacOSXLibraryBundle.getWithIdentifier("com.apple.opengl") which fails
+        // on iOS (no system OpenGL framework) →
+        //   java.lang.UnsatisfiedLinkError: Failed to retrieve bundle with
+        //   identifier: com.apple.opengl
+        // Point opengl.libname at libgl4es_114.dylib so GL.create() finds GL
+        // function pointers; gl4es entry points are never actually invoked at
+        // runtime because the renderer is Vulkan/MoltenVK.
+        const char *openglLibName = (strcmp(glLibName, RENDERER_NAME_VULKAN) == 0)
+            ? RENDERER_NAME_GL4ES
+            : glLibName;
+        margv[++margc] = [NSString stringWithFormat:@"-Dorg.lwjgl.opengl.libname=%s", openglLibName].UTF8String;
     }
 
     NSString *librariesPath = [NSString stringWithFormat:@"%@/libs", NSBundle.mainBundle.bundlePath];

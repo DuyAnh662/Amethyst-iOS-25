@@ -261,11 +261,15 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
         // on iOS (no system OpenGL framework) →
         //   java.lang.UnsatisfiedLinkError: Failed to retrieve bundle with
         //   identifier: com.apple.opengl
-        // Point opengl.libname at libgl4es_114.dylib so GL.create() finds GL
-        // function pointers; gl4es entry points are never actually invoked at
-        // runtime because the renderer is Vulkan/MoltenVK.
+        // Point opengl.libname at libmobileglues.dylib for Vulkan setups —
+        // MobileGlues is purpose-built for GL-on-Metal/Vulkan on mobile and
+        // already uses our shipped libspirv-cross.dylib for shader translation.
+        // GL.create() finds GL function pointers; if Minecraft ever does call
+        // a GL entry point (compat code, shader build, etc.) MobileGlues can
+        // route it through Vulkan rather than crashing like a context-less
+        // gl4es would.
         const char *openglLibName = (strcmp(glLibName, RENDERER_NAME_VULKAN) == 0)
-            ? RENDERER_NAME_GL4ES
+            ? RENDERER_NAME_MOBILEGLUES
             : glLibName;
         margv[++margc] = [NSString stringWithFormat:@"-Dorg.lwjgl.opengl.libname=%s", openglLibName].UTF8String;
     }

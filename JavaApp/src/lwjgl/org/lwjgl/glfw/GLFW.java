@@ -809,6 +809,17 @@ public class GLFW
         return GLFW_PLATFORM_X11;
     }
 
+    /**
+     * GLFW 3.4 added platform-supported queries. Minecraft 26.2's
+     * GLX._initGlfw calls glfwPlatformSupported(...) before glfwInit(),
+     * so without this method we fail with NoSuchMethodError. Pojav-iOS
+     * reports itself as X11 (see glfwGetPlatform above) — say so here
+     * and reject everything else.
+     */
+    public static boolean glfwPlatformSupported(int platform) {
+        return platform == GLFW_PLATFORM_X11;
+    }
+
     @NativeType("GLFWwindow *")
     public static long glfwGetCurrentContext() {
         long __functionAddress = Functions.GetCurrentContext;

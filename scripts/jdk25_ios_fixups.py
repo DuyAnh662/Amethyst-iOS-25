@@ -466,6 +466,39 @@ patch('src/hotspot/share/code/codeBlob.cpp', [
      "  }"),
 ])
 
+# 33. CodeBlob::purge has a SECOND _oop_maps write that fixup #31 missed:
+#     after `delete _oop_maps`, it sets `_oop_maps = nullptr`. v8 confirmed
+#     this is the next SIGBUS site (purge+0x2a0, after the +0x268 fix).
+#     Multi-line match with the `delete _oop_maps;` before, since the same
+#     `_oop_maps = nullptr;` line also appears in set_oop_maps and
+#     prepare_for_archiving_impl with different surroundings.
+patch('src/hotspot/share/code/codeBlob.cpp', [
+    ("codeblob-purge-oop-maps-null-mirror-w-set",
+     "  if (_oop_maps != nullptr) {\n"
+     "    delete _oop_maps;\n"
+     "    _oop_maps = nullptr;\n"
+     "  }",
+     "  if (_oop_maps != nullptr) {\n"
+     "    delete _oop_maps;\n"
+     "    mirror_w_set(_oop_maps) = nullptr;\n"
+     "  }"),
+])
+
+# 34. CodeBlob::prepare_for_archiving_impl writes _oop_maps and _mutable_data
+#     to nullptr. Called during CDS archive creation — unlikely to fire
+#     during normal Minecraft runtime, but wrap for defensive safety.
+patch('src/hotspot/share/code/codeBlob.cpp', [
+    ("codeblob-prepare-for-archiving-mirror-w-set",
+     "void CodeBlob::prepare_for_archiving_impl() {\n"
+     "  set_name(nullptr);\n"
+     "  _oop_maps = nullptr;\n"
+     "  _mutable_data = nullptr;",
+     "void CodeBlob::prepare_for_archiving_impl() {\n"
+     "  set_name(nullptr);\n"
+     "  mirror_w_set(_oop_maps) = nullptr;\n"
+     "  mirror_w_set(_mutable_data) = nullptr;"),
+])
+
 # 19. codeBlob.cpp: 3 hunks the JDK 21 mirror_mapping patch couldn't place
 #     because JDK 25 changed BufferBlob/AdapterBlob constructor signatures
 #     (CodeBlobKind enum added) and operator-new arg list. Surgical replacements:

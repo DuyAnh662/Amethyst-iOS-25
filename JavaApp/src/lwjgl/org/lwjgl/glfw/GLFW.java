@@ -1123,7 +1123,14 @@ public class GLFW
     public static void glfwPostEmptyEvent() {}
 
     public static int glfwGetInputMode(@NativeType("GLFWwindow *") long window, int mode) {
-        return internalGetWindow(window).inputModes.get(mode);
+        // Map.get returns null for unset modes, which auto-unboxing would
+        // turn into an NPE. MC 26.2's TextInputManager.tick polls
+        // glfwGetInputMode(window, GLFW_IME) every frame; that mode is
+        // never set on iOS (no IME wiring), so without this guard the
+        // first tick crashes. Return 0 (= GLFW_FALSE / "off") for any
+        // mode the window doesn't have a stored value for.
+        Integer value = internalGetWindow(window).inputModes.get(mode);
+        return value != null ? value : 0;
     }
 
     public static void glfwSetInputMode(@NativeType("GLFWwindow *") long window, int mode, int value) {

@@ -19,22 +19,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
+        with:
+          submodules: true
 
-      - name: Init submodules with auth
+      - name: Init nested submodules (MobileGlues dependencies)
         run: |
-          echo "=== Initializing submodules ==="
-          git submodule status 2>&1 || true
+          cd Natives/external/MobileGlues
           git submodule update --init --recursive --depth=1 --progress 2>&1
-          echo "=== Checking nested submodules ==="
-          ls -la Natives/external/MobileGlues/MobileGlues-cpp/3rdparty/glslang 2>&1 || {
-            echo "Nested submodules missing, forcing re-init..."
-            cd Natives/external/MobileGlues
-            git submodule init 2>&1
-            git submodule update --init --recursive --depth=1 --progress 2>&1
-            cd "$GITHUB_WORKSPACE"
-          }
           echo "=== Verification ==="
-          ls -d Natives/external/MobileGlues/MobileGlues-cpp/3rdparty/*/
+          ls -d MobileGlues-cpp/3rdparty/*/
 
       - name: Install dependencies
         run: |

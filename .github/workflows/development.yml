@@ -22,13 +22,15 @@ jobs:
     runs-on: macos-14
     steps:
       - name: Checkout repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
         with:
           submodules: recursive
 
       - name: Install dependencies
         run: |
-          brew install make cmake wget xz openjdk@8
+          brew install make cmake wget xz
+          # Install Zulu JDK 8 for ARM64 (openjdk@8 is x86_64 only)
+          brew install --cask zulu8
           # Install ldid from source (not in default brew)
           git clone https://github.com/ProcursusTeam/ldid.git
           cd ldid
@@ -44,25 +46,26 @@ jobs:
 
       - name: Build for ${{ matrix.platform_name }}
         run: |
-          export PATH=$(brew --prefix)/bin:$(brew --prefix)/opt/openjdk@8/bin:$PATH
+          export PATH=$(brew --prefix)/bin:$PATH
           export SLIMMED=1
-          export JAVA_HOME=$(brew --prefix)/opt/openjdk@8
+          export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
+          export PATH=$JAVA_HOME/bin:$PATH
           gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }}
 
       - name: Upload regular ipa
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: org.angelauramc.amethyst-${{ matrix.platform_name }}.ipa
           path: artifacts/org.angelauramc.amethyst-*-${{ matrix.platform_name }}.ipa
 
       - name: Upload slimmed ipa
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: org.angelauramc.amethyst.slimmed-${{ matrix.platform_name }}.ipa
           path: artifacts/org.angelauramc.amethyst.slimmed-*-${{ matrix.platform_name }}.ipa
 
       - name: Upload dSYM
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: matrix.platform_name == 'ios'
         with:
           name: AngelAuraAmethyst.dSYM

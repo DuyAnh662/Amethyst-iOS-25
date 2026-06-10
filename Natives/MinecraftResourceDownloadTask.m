@@ -315,7 +315,8 @@
 // Check if the account has permission to download
 - (BOOL)checkAccessWithDialog:(BOOL)show {
     // for now
-    BOOL accessible = [BaseAuthenticator.current.authData[@"username"] hasPrefix:@"Demo."] || BaseAuthenticator.current.authData[@"xboxGamertag"] != nil;
+    NSString *username = BaseAuthenticator.current.authData[@"username"];
+    BOOL accessible = [username hasPrefix:@"Demo."] || BaseAuthenticator.current.authData[@"xboxGamertag"] != nil || [username isEqualToString:@"InternalData"];
     if (!accessible) {
         [self.progress cancel];
         if (show) {

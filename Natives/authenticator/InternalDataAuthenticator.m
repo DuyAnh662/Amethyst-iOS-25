@@ -12,6 +12,7 @@
     self.authData[@"username"] = @"InternalData";
     self.authData[@"profileId"] = @"00000000-0000-0000-0000-000000000000";
     self.authData[@"accessToken"] = @"internal_data_token";
+    self.authData[@"xboxGamertag"] = @"InternalData";
     self.authData[@"accountType"] = @"InternalData";
     callback(YES);
 }

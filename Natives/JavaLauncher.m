@@ -189,7 +189,7 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
 
         // Setup MobileGlues environment variables from preferences (configurable settings)
         if ([renderer isEqualToString:@ RENDERER_NAME_MOBILEGLUES]) {
-            setenv("MG_ANGLE", getPrefBool(@"mg.enableAngle") ? "1" : "0", 1);
+            setenv("MG_ANGLE", [@(getPrefInt(@"mg.enableAngle")) stringValue].UTF8String, 1);
             setenv("MG_NOERROR", [@(getPrefInt(@"mg.ignoreError")) stringValue].UTF8String, 1);
             setenv("MG_COMPUTE_SHADER", getPrefBool(@"mg.extComputeShader") ? "1" : "0", 1);
             setenv("MG_TIMER_QUERY", getPrefBool(@"mg.extTimerQuery") ? "1" : "0", 1);
@@ -197,8 +197,8 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
             setenv("MG_GLSL_CACHE_SIZE", [@(getPrefInt(@"mg.maxGlslCacheSize")) stringValue].UTF8String, 1);
             setenv("MG_MULTIDRAW", [@(getPrefInt(@"mg.multidrawMode")) stringValue].UTF8String, 1);
             setenv("MG_GL_VERSION", [@(getPrefInt(@"mg.customGLVersion")) stringValue].UTF8String, 1);
-            setenv("MG_FSR", [@(getPrefInt(@"mg.fsr1Setting")) stringValue].UTF8String, 1);
-            setenv("MG_HIDE_ENV", getPrefBool(@"mg.hideMGEnv") ? "1" : "0", 1);
+            setenv("MG_FSR", getPrefBool(@"mg.fsr1Setting") ? "1" : "0", 1);
+            setenv("MG_ANGLE_DEPTH_CLEAR", [@(getPrefInt(@"mg.angleDepthClearFix")) stringValue].UTF8String, 1);
             NSLog(@"[JavaLauncher] MobileGlues environment variables set from preferences");
         }
 

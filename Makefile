@@ -317,15 +317,13 @@ dep_mg:
 		-DCMAKE_OSX_ARCHITECTURES=arm64 \
 		-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 \
 		-DCMAKE_C_FLAGS="-arch arm64" \
-		$(SOURCEDIR)/MobileGlues/MobileGlues-cpp/
+		$(SOURCEDIR)/Natives/external/MobileGlues/MobileGlues-cpp/
 
 	cmake --build $(WORKINGDIR)/mobileglues --config RelWithDebInfo -j$(JOBS) --target mobileglues
 	cp $(WORKINGDIR)/mobileglues/libmobileglues.dylib $(WORKINGDIR)/libmobileglues.dylib
-	# iOS shared libs are now bundled within MobileGlues submodule
-	if [ -f "$(SOURCEDIR)/MobileGlues/MobileGlues-cpp/external/ios/libspirv-cross-c-shared.0.dylib" ]; then \
-		cp $(SOURCEDIR)/MobileGlues/MobileGlues-cpp/external/ios/libspirv-cross-c-shared.0.dylib $(WORKINGDIR)/libspirv-cross-c-shared.0.dylib; \
-	elif [ -f "$(SOURCEDIR)/MobileGlues/MobileGlues-cpp/libraries/ios/libspirv-cross-c-shared.0.dylib" ]; then \
-		cp $(SOURCEDIR)/MobileGlues/MobileGlues-cpp/libraries/ios/libspirv-cross-c-shared.0.dylib $(WORKINGDIR)/libspirv-cross-c-shared.0.dylib; \
+	# iOS shared libs bundled within MobileGlues submodule
+	if [ -f "$(SOURCEDIR)/Natives/external/MobileGlues/MobileGlues-cpp/external/ios/libspirv-cross-c-shared.0.dylib" ]; then \
+		cp $(SOURCEDIR)/Natives/external/MobileGlues/MobileGlues-cpp/external/ios/libspirv-cross-c-shared.0.dylib $(WORKINGDIR)/libspirv-cross-c-shared.0.dylib; \
 	fi
 	echo '[Amethyst v$(VERSION)] dep_mg - end'
 

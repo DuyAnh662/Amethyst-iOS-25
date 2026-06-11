@@ -176,7 +176,15 @@ void* pojavCreateContext(basic_render_window_t* contextSrc) {
         return (__bridge void *)SurfaceViewController.surface.layer;
     }
 
-    return br_init_context(contextSrc);
+    basic_render_window_t *ctx = br_init_context(contextSrc);
+    // Make the context current immediately after creation. This is needed
+    // because LWJGL's Platform.get() returns MACOSX on iOS, which skips
+    // the fixPojavGLContext() workaround that Android uses to ensure the
+    // context is current before GL.createCapabilities().
+    if (ctx) {
+        br_make_current(ctx);
+    }
+    return ctx;
 }
 
 void pojavSwapInterval(int interval) {

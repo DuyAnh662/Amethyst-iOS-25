@@ -806,7 +806,10 @@ public class GLFW
     public static void glfwInitHint(int hint, int value) { }
 
     public static int glfwGetPlatform() {
-        return GLFW_PLATFORM_X11;
+        // Return NULL platform since iOS uses EGL/GLES via ANGLE,
+        // not X11/GLX or Cocoa/CGL. LWJGL handles function pointer
+        // resolution through the library specified by org.lwjgl.opengl.libname.
+        return GLFW_PLATFORM_NULL;
     }
 
     @NativeType("GLFWwindow *")

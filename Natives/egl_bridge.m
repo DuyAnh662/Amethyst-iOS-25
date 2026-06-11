@@ -68,10 +68,11 @@ int pojavInitOpenGL() {
         setenv("LIBGL_EGL", "@rpath/libtinygl4angle.dylib", 1);
         setenv("LIBGL_GLES", "@rpath/libtinygl4angle.dylib", 1);
         BOOL ngInitOk = NO;
+        basic_render_window_t *tmpCtx = NULL;
         if (!br_init()) {
             NSLog(@"[EGL Bridge] Failed to initialize EGL display for NG-GL4ES");
         } else {
-            basic_render_window_t *tmpCtx = br_init_context(NULL);
+            tmpCtx = br_init_context(NULL);
             if (tmpCtx) {
                 br_make_current(tmpCtx);
                 ngInitOk = YES;
@@ -81,6 +82,12 @@ int pojavInitOpenGL() {
         }
         JNI_LWJGL_changeRenderer(renderer.UTF8String);
         dlopen([NSString stringWithFormat:@"@rpath/%@", renderer].UTF8String, RTLD_GLOBAL);
+        // Destroy temp context/surface so the real context creation in
+        // pojavCreateContext doesn't conflict on the same native window layer.
+        if (tmpCtx) {
+            br_make_current(NULL);
+            gl_destroy_context_only(&tmpCtx->gl);
+        }
         return ngInitOk ? 0 : 1;
     } else if ([renderer isEqualToString:@ RENDERER_NAME_MOBILEGLUES]) {
         renderer = @ RENDERER_NAME_MOBILEGLUES;

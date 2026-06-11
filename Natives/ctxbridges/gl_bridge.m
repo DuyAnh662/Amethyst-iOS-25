@@ -136,6 +136,18 @@ void gl_swap_buffers() {
     }
 }
 
+void gl_destroy_context_only(gl_render_window_t* bundle) {
+    if (!bundle) return;
+    handle.eglMakeCurrent(g_EglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    if (bundle->surface) {
+        handle.eglDestroySurface(g_EglDisplay, bundle->surface);
+    }
+    if (bundle->context) {
+        handle.eglDestroyContext(g_EglDisplay, bundle->context);
+    }
+    free(bundle);
+}
+
 void gl_swap_interval(int swapInterval) {
     handle.eglSwapInterval(g_EglDisplay, swapInterval);
 }

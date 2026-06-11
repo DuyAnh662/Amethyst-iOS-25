@@ -33,4 +33,5 @@ typedef struct {
     EGLSurface surface;
 } gl_render_window_t;
 
+void gl_destroy_context_only(gl_render_window_t* bundle);
 void set_gl_bridge_tbl();

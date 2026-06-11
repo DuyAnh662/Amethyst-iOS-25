@@ -1017,7 +1017,7 @@ AliasExport(void, glShaderBinary, ,
 AliasExport_V(void, glReleaseShaderCompiler);
 
 GLhandleARB APIENTRY_GL4ES gl4es_glCreateShaderObject(GLenum shaderType) {
-    return gl4es_glCreateShader(shaderType);
+    return (GLhandleARB)(uintptr_t)gl4es_glCreateShader(shaderType);
 }
 
 AliasExport(GLhandleARB, glCreateShaderObject, ARB, (GLenum shaderType));

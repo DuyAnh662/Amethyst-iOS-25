@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <GL/gl.h>
 #include <regex.h>
 #include "../glx/hardext.h"
@@ -1031,38 +1032,38 @@ GLvoid APIENTRY_GL4ES gl4es_glDeleteObject(GLhandleARB obj) {
     khint_t k_program;
     {
         khash_t(programlist)* programs = glstate->glsl->programs;
-        k_program = kh_get(programlist, programs, obj);
+        k_program = kh_get(programlist, programs, (khint32_t)(uintptr_t)obj);
         if (k_program != kh_end(programs)) glprogram = kh_value(programs, k_program);
     }
     if (glprogram)
-        gl4es_glDeleteProgram(obj);
+        gl4es_glDeleteProgram((GLuint)(uintptr_t)obj);
     else
-        gl4es_glDeleteShader(obj);
+        gl4es_glDeleteShader((GLuint)(uintptr_t)obj);
 }
 
 GLhandleARB APIENTRY_GL4ES gl4es_glGetHandle(GLenum pname) {
     FLUSH_BEGINEND;
     if (pname != GL_PROGRAM_OBJECT_ARB) {
         errorShim(GL_INVALID_ENUM);
-        return 0;
+        return (GLhandleARB)0;
     }
-    return glstate->glsl->program;
+    return (GLhandleARB)(uintptr_t)glstate->glsl->program;
 }
 
 GLvoid APIENTRY_GL4ES gl4es_glDetachObject(GLhandleARB containerObj, GLhandleARB attachedObj) {
-    gl4es_glDetachShader(containerObj, attachedObj);
+    gl4es_glDetachShader((GLuint)(uintptr_t)containerObj, (GLuint)(uintptr_t)attachedObj);
 }
 
 GLhandleARB APIENTRY_GL4ES gl4es_glCreateProgramObject(GLvoid) {
-    return gl4es_glCreateProgram();
+    return (GLhandleARB)(uintptr_t)gl4es_glCreateProgram();
 }
 
 GLvoid APIENTRY_GL4ES gl4es_glAttachObject(GLhandleARB containerObj, GLhandleARB obj) {
-    gl4es_glAttachShader(containerObj, obj);
+    gl4es_glAttachShader((GLuint)(uintptr_t)containerObj, (GLuint)(uintptr_t)obj);
 }
 
 GLvoid APIENTRY_GL4ES gl4es_glUseProgramObject(GLhandleARB programObj) {
-    gl4es_glUseProgram(programObj);
+    gl4es_glUseProgram((GLuint)(uintptr_t)programObj);
 }
 
 GLvoid APIENTRY_GL4ES gl4es_glGetObjectParameterfv(GLhandleARB obj, GLenum pname, GLfloat* params) {
@@ -1072,15 +1073,15 @@ GLvoid APIENTRY_GL4ES gl4es_glGetObjectParameterfv(GLhandleARB obj, GLenum pname
     khint_t k_program;
     {
         khash_t(programlist)* programs = glstate->glsl->programs;
-        k_program = kh_get(programlist, programs, obj);
+        k_program = kh_get(programlist, programs, (khint32_t)(uintptr_t)obj);
         if (k_program != kh_end(programs)) glprogram = kh_value(programs, k_program);
     }
     // float, really?
     GLint p[4];
     if (glprogram)
-        gl4es_glGetProgramiv(obj, pname, p);
+        gl4es_glGetProgramiv((GLuint)(uintptr_t)obj, pname, p);
     else
-        gl4es_glGetShaderiv(obj, pname, p);
+        gl4es_glGetShaderiv((GLuint)(uintptr_t)obj, pname, p);
 
     params[0] = p[0]; // only 1-sized array here, right?
 }
@@ -1091,13 +1092,13 @@ GLvoid APIENTRY_GL4ES gl4es_glGetObjectParameteriv(GLhandleARB obj, GLenum pname
     khint_t k_program;
     {
         khash_t(programlist)* programs = glstate->glsl->programs;
-        k_program = kh_get(programlist, programs, obj);
+        k_program = kh_get(programlist, programs, (khint32_t)(uintptr_t)obj);
         if (k_program != kh_end(programs)) glprogram = kh_value(programs, k_program);
     }
     if (glprogram)
-        gl4es_glGetProgramiv(obj, pname, params);
+        gl4es_glGetProgramiv((GLuint)(uintptr_t)obj, pname, params);
     else
-        gl4es_glGetShaderiv(obj, pname, params);
+        gl4es_glGetShaderiv((GLuint)(uintptr_t)obj, pname, params);
     // hack, some programs don't take into account that the length returned by GL_OBJECT_INFO_LOG_LENGTH_ARB exclude the
     // '\0'.. so adding it here
     if (pname == GL_INFO_LOG_LENGTH) (*params)++;
@@ -1110,19 +1111,19 @@ GLvoid APIENTRY_GL4ES gl4es_glGetInfoLog(GLhandleARB obj, GLsizei maxLength, GLs
     khint_t k_program;
     {
         khash_t(programlist)* programs = glstate->glsl->programs;
-        k_program = kh_get(programlist, programs, obj);
+        k_program = kh_get(programlist, programs, (khint32_t)(uintptr_t)obj);
         if (k_program != kh_end(programs)) glprogram = kh_value(programs, k_program);
     }
 
     if (glprogram)
-        gl4es_glGetProgramInfoLog(obj, maxLength, length, infoLog);
+        gl4es_glGetProgramInfoLog((GLuint)(uintptr_t)obj, maxLength, length, infoLog);
     else
-        gl4es_glGetShaderInfoLog(obj, maxLength, length, infoLog);
+        gl4es_glGetShaderInfoLog((GLuint)(uintptr_t)obj, maxLength, length, infoLog);
 }
 
 GLvoid APIENTRY_GL4ES gl4es_glGetAttachedObjects(GLhandleARB containerObj, GLsizei maxCount, GLsizei* count,
                                                  GLhandleARB* obj) {
-    gl4es_glGetAttachedShaders(containerObj, maxCount, count, obj);
+    gl4es_glGetAttachedShaders((GLuint)(uintptr_t)containerObj, maxCount, count, (GLuint*)obj);
 }
 
 AliasExport(void, glAttachShader, , (GLuint program, GLuint shader));

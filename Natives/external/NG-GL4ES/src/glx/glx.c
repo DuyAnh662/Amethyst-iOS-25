@@ -3197,6 +3197,7 @@ __attribute__((visibility("default"))) const __glXGLCoreFunctions __GLXGL_CORE_F
     .ptr_glXWaitX = gl4es_glXWaitX,
 };
 #endif
+#ifndef NOX11
 
 typedef void (*__GLXextFuncPtr)(void);
 typedef int glvnd_mutex_t;
@@ -3342,3 +3343,5 @@ __attribute__((visibility("default"))) VisualID XVisualIDFromVisual(Visual* visu
     if (!visual) return (VisualID)0;
     return (VisualID)visual->visualid;
 }
+
+#endif // NOX11

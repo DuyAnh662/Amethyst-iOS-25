@@ -23,14 +23,18 @@ check_empty_classes:
 		exit 1; \
 	fi
 
-# Rules for building java class
-$(CLASSES): $(OUTPUTDIR)/%.class: $(SOURCEDIR)/%.java
+# Compile all Java sources in a single invocation to avoid parallel javac race conditions
+$(OUTPUTDIR)/classes/.compiled: $(SOURCES)
+	@mkdir -p $(OUTPUTDIR)/classes
+	@echo "Compiling all Java sources..."
+	@$(BOOTJDK)/javac $(JCFLAGS) -d $(OUTPUTDIR)/classes $(SOURCES)
+	@touch $@
+
+# Copy pre-compiled classes from build/classes/ to target directories
+$(CLASSES): $(OUTPUTDIR)/%.class: $(SOURCEDIR)/%.java $(OUTPUTDIR)/classes/.compiled
 	@set -e
 	$(eval TARGET=$(word 2, $(subst /, ,$@)))
-	@mkdir -p $(OUTPUTDIR)/classes
 	@mkdir -p $(dir $@)
-	@echo "Compiling $<"
-	@$(BOOTJDK)/javac $(JCFLAGS) -d $(OUTPUTDIR)/classes $<
 	@cp $(@:$(OUTPUTDIR)/$(TARGET)/%.class=$(OUTPUTDIR)/classes/%*.class) $(dir $@)/
 
 $(OUTPUTDIR)/launcher.jar: $(CLASSES) check_empty_classes

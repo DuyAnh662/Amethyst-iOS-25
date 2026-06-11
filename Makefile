@@ -300,6 +300,8 @@ jre: native
 	for jdir in java-8-openjdk java-17-openjdk java-21-openjdk java-25-openjdk; do \
 		if [ -d "depends/$$jdir" ]; then \
 			rm -rf "depends/$$jdir/ASSEMBLY_EXCEPTION" "depends/$$jdir/bin" "depends/$$jdir/include" "depends/$$jdir/jre" "depends/$$jdir/legal" "depends/$$jdir/LICENSE" "depends/$$jdir/man" "depends/$$jdir/THIRD_PARTY_README" "depends/$$jdir/lib/ct.sym" "depends/$$jdir/lib/jspawnhelper" "depends/$$jdir/lib/libjsig.dylib" "depends/$$jdir/lib/src.zip" "depends/$$jdir/lib/tools.jar" 2>/dev/null || true; \
+			find "depends/$$jdir" -name "*.o" -type f -delete 2>/dev/null || true; \
+			find "depends/$$jdir" -name "*.a" -type f -delete 2>/dev/null || true; \
 		fi; \
 	done
 	$(call METHOD_DIRCHECK,$(OUTPUTDIR)/java_runtimes)
@@ -328,7 +330,7 @@ dep_mg:
 		-DCMAKE_OSX_SYSROOT="$(SDKPATH)" \
 		-DCMAKE_OSX_ARCHITECTURES=arm64 \
 		-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 \
-		-DCMAKE_C_FLAGS="-arch arm64" \
+		-DCMAKE_C_FLAGS="-arch arm64 -mcpu=apple-a11 -mtune=apple-a11" \
 		$(SOURCEDIR)/Natives/external/MobileGlues/MobileGlues-cpp/
 
 	cmake --build $(WORKINGDIR)/mobileglues --config RelWithDebInfo -j$(JOBS) --target mobileglues
@@ -371,7 +373,18 @@ payload: native dep_mg java jre assets
 	if [ '$(SLIMMED_ONLY)' != '1' ]; then \
 		cp -R $(OUTPUTDIR)/java_runtimes $(OUTPUTDIR)/Payload/AngelAuraAmethyst.app; \
 	fi
-	-ldid -S $(OUTPUTDIR)/Payload/AngelAuraAmethyst.app 2>/dev/null || true; \
+	# Remove .o/.a files that may cause ldid "Unsupported Mach-O type" in TrollStore
+	find $(OUTPUTDIR)/Payload/AngelAuraAmethyst.app -name "*.o" -type f -delete 2>/dev/null || true
+	find $(OUTPUTDIR)/Payload/AngelAuraAmethyst.app -name "*.a" -type f -delete 2>/dev/null || true
+	# Sign all individual dylibs and Mach-O files in the bundle
+	for file in $$(find $(OUTPUTDIR)/Payload/AngelAuraAmethyst.app -type f); do \
+		if file "$$file" 2>/dev/null | grep -q "Mach-O"; then \
+			if ! ldid -S "$$file" 2>/dev/null; then \
+				echo "[WARN] ldid failed to sign $$file, removing..."; \
+				rm -f "$$file"; \
+			fi \
+		fi \
+	done
 	if [ '$(TROLLSTORE_JIT_ENT)' == '1' ]; then \
 		ldid -S$(SOURCEDIR)/entitlements.trollstore.xml $(OUTPUTDIR)/Payload/AngelAuraAmethyst.app/AngelAuraAmethyst; \
 	elif [ '$(PLATFORM)' == '6' ]; then \

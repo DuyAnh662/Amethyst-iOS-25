@@ -213,6 +213,8 @@
 "preference.detail.gesture_mouse" = "Enables gestures, such as tap to place block, hold to break block, scrolling with 2 fingers";
 "preference.title.gesture_hotbar" = "Hotbar gestures";
 "preference.detail.gesture_hotbar" = "Enables gestures, such as touch the hotbar slot, swap items between hand, throw items";
+"preference.title.touch_clicks_disabled" = "Touch clicks disabled";
+"preference.detail.touch_clicks_disabled" = "Disables touch-based block placing (tap) and breaking (hold). Only buttons can perform these actions.";
 "preference.title.disable_haptics" = "Disable on-screen haptics";
 "preference.title.press_duration" = "Long-press duration (ms)";
 "preference.detail.press_duration" = "Trigger press duration for destroying blocks and dropping items.";

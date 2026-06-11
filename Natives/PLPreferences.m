@@ -193,6 +193,17 @@
     return self;
 }
 
+- (void)mergeDict:(NSMutableDictionary *)target with:(NSDictionary *)source {
+    for (NSString *key in source.allKeys) {
+        if (!target[key]) {
+            target[key] = source[key];
+        } else if ([target[key] isKindOfClass:NSMutableDictionary.class] &&
+                   [source[key] isKindOfClass:NSDictionary.class]) {
+            [self mergeDict:target[key] with:source[key]];
+        }
+    }
+}
+
 - (id)setDefaultsForPref:(NSMutableDictionary *)pref global:(BOOL)global {
     NSMutableDictionary<NSString *, NSMutableDictionary *> *defaults = [PLPreferences defaultPrefForGlobal:global];
     if (!pref) {
@@ -207,9 +218,15 @@
             continue;
         }
         for (NSString *key in defaults[section].allKeys) {
-            if (pref[section][key]) continue;
+            if (pref[section][key]) {
+                if ([pref[section][key] isKindOfClass:NSMutableDictionary.class] &&
+                    [defaults[section][key] isKindOfClass:NSDictionary.class]) {
+                    [self mergeDict:pref[section][key] with:defaults[section][key]];
+                }
+                continue;
+            }
             id value = defaults[section][key];
-            NSDebugLog(@"[PLPreferences] Set default vaule: %@: %@", key, value);
+            NSDebugLog(@"[PLPreferences] Set default value: %@: %@", key, value);
             pref[section][key] = value;
         }
     }

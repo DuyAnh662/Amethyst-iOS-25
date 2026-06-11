@@ -488,9 +488,11 @@ static void init_vsync() {
 #endif
 }
 
+#ifndef NOX11
 static void xrefresh() {
     int dummy = system("xrefresh");
 }
+#endif
 
 #ifdef PANDORA
 static void pandora_reset_gamma() {
@@ -3103,6 +3105,7 @@ AliasExport(void, glXWaitGL, , ());
 AliasExport(void, glXWaitX, , ());
 AliasExport(void, glXReleaseBuffersMESA, , ());
 
+#if !defined(NOX11) || defined(GLX_STUBS)
 typedef struct {
     GLXFBConfig* (*ptr_glXChooseFBConfig)(Display* dpy, int screen, const int* attrib_list, int* nelements);
     XVisualInfo* (*ptr_glXChooseVisual)(Display* dpy, int screen, int* attribList);
@@ -3187,6 +3190,7 @@ __attribute__((visibility("default"))) const __glXGLCoreFunctions __GLXGL_CORE_F
     .ptr_glXWaitGL = gl4es_glXWaitGL,
     .ptr_glXWaitX = gl4es_glXWaitX,
 };
+#endif
 
 typedef void (*__GLXextFuncPtr)(void);
 typedef int glvnd_mutex_t;

@@ -6,6 +6,7 @@ If anyone is able or willing to help me fix keyboard support, there is a post ab
 
 Compiling is not recommended and not supported. You have been warned.
 
+Thanks to vibecodest for the source code!
 ## Third party components and their licenses
 - [Caciocavallo](https://github.com/PojavLauncherTeam/caciocavallo): [GNU GPLv2 License](https://github.com/PojavLauncherTeam/caciocavallo/blob/master/LICENSE).
 - [jsr305](https://code.google.com/p/jsr-305): [3-Clause BSD License](http://opensource.org/licenses/BSD-3-Clause).

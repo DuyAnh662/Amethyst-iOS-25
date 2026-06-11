@@ -343,6 +343,14 @@ dep_mg:
 
 dep_ng_gl4es:
 	echo '[Amethyst v$(VERSION)] dep_ng_gl4es - start'
+	@if [ ! -d "$(SOURCEDIR)/Natives/external/NG-GL4ES/3rdparty/glslang/.git" ]; then \
+		echo '[NG-GL4ES] Cloning glslang 3rdparty dependency...'; \
+		git clone --depth=1 https://github.com/KhronosGroup/glslang.git "$(SOURCEDIR)/Natives/external/NG-GL4ES/3rdparty/glslang"; \
+	fi
+	@if [ ! -d "$(SOURCEDIR)/Natives/external/NG-GL4ES/3rdparty/SPIRV-Cross/.git" ]; then \
+		echo '[NG-GL4ES] Cloning SPIRV-Cross 3rdparty dependency...'; \
+		git clone --depth=1 https://github.com/KhronosGroup/SPIRV-Cross.git "$(SOURCEDIR)/Natives/external/NG-GL4ES/3rdparty/SPIRV-Cross"; \
+	fi
 	mkdir -p $(WORKINGDIR)/ng_gl4es
 	cd $(WORKINGDIR)/ng_gl4es && cmake \
 		-DMACOS="1" \

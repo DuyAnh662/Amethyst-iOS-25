@@ -193,6 +193,8 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
             setenv("MG_GL_VERSION", [@(getPrefInt(@"mg.customGLVersion")) stringValue].UTF8String, 1);
             setenv("MG_FSR", getPrefBool(@"mg.fsr1Setting") ? "1" : "0", 1);
             setenv("MG_ANGLE_DEPTH_CLEAR", [@(getPrefInt(@"mg.angleDepthClearFix")) stringValue].UTF8String, 1);
+            setenv("MG_BUFFER_COHERENT_AS_FLUSH", [@(getPrefInt(@"mg.bufferCoherentAsFlush")) stringValue].UTF8String, 1);
+            setenv("MG_HIDE_MG_ENV_LEVEL", [@(getPrefInt(@"mg.hideMGEnvLevel")) stringValue].UTF8String, 1);
             NSLog(@"[JavaLauncher] MobileGlues environment variables set from preferences");
         }
 

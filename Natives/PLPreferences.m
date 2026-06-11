@@ -68,15 +68,17 @@
             @"allocated_memory": [NSNumber numberWithFloat:roundf((NSProcessInfo.processInfo.physicalMemory / 1048576) * 0.25)]
         }.mutableCopy,
         @"mg": @{
-            @"maxGlslCacheSize": @2,
+            @"maxGlslCacheSize": @30,
             @"enableAngle": @0,
             @"ignoreError": @0,
             @"multidrawMode": @0,
             @"customGLVersion": @0,
             @"angleDepthClearFix": @0,
+            @"bufferCoherentAsFlush": @1,
+            @"hideMGEnvLevel": @0,
             @"extComputeShader": @NO,
             @"extTimerQuery": @NO,
-            @"extDirectStateAccess": @YES,
+            @"extDirectStateAccess": @NO,
             @"fsr1Setting": @NO
         }.mutableCopy,
         @"ng": @{

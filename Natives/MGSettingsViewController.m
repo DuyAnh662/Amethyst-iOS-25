@@ -49,7 +49,7 @@ typedef NS_ENUM(NSInteger, MGCellType) {
         // Section 0: Basic
         @[
             @{@"key": @"maxGlslCacheSize", @"label": @"Max GLSL Cache Size", @"desc": @"Enter -1 to disable. Unit: Megabytes (MB)",
-              @"type": @(MGCellTextField), @"def": @2, @"placeholder": @"-1 or MB"},
+              @"type": @(MGCellTextField), @"def": @30, @"placeholder": @"-1 or MB"},
         ],
         // Section 1: ANGLE
         @[
@@ -98,6 +98,17 @@ typedef NS_ENUM(NSInteger, MGCellType) {
             @{@"key": @"fsr1Setting", @"label": @"(Experimental) Enable built-in FSR1",
               @"type": @(MGCellSwitch), @"def": @NO},
         ],
+        // Section 7: Advanced
+        @[
+            @{@"key": @"bufferCoherentAsFlush", @"label": @"Buffer Coherent As Flush",
+              @"desc": @"Treat GL_BUFFER_COHERENT as GL_MAP_FLUSH_EXPLICIT_BIT",
+              @"type": @(MGCellPicker),
+              @"options": @[@"Disabled", @"Enabled"],
+              @"values": @[@0, @1], @"def": @1},
+            @{@"key": @"hideMGEnvLevel", @"label": @"Hide MG Environment Level",
+              @"desc": @"Set to 0 to show all, higher values hide more verbose messages",
+              @"type": @(MGCellTextField), @"def": @0, @"placeholder": @"0-9"},
+        ],
     ];
 
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:localize(@"Done", nil)
@@ -123,6 +134,7 @@ typedef NS_ENUM(NSInteger, MGCellType) {
         case 4: return @"OpenGL Version";
         case 5: return @"Depth Clear";
         case 6: return @"Extensions";
+        case 7: return @"Advanced";
         default: return @"";
     }
 }

@@ -444,6 +444,9 @@
 
 - (void)actionMenuBtnCopy {
     self.resizeView.hidden = YES;
+    if (![self.currentGesture.view isKindOfClass:[ControlButton class]]) {
+        return;
+    }
     ControlButton *sourceButton = (ControlButton *)self.currentGesture.view;
     NSString *copySuffix = localize(@"custom_controls.button_menu.copy_suffix", nil);
     if (![copySuffix length]) copySuffix = @" (copy)";

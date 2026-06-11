@@ -41,8 +41,13 @@
 "custom_controls.button_edit.stroke_color" = "Màu viền phím";
 "custom_controls.button_edit.corner_radius" = "Bán kính góc";
 "custom_controls.button_edit.opacity" = "Độ trong suốt (%)";
+"custom_controls.button_edit.visibility" = "Hiển thị";
+"Always" = "Luôn luôn";
+"In game" = "Trong trò chơi";
+"In menu" = "Trong menu";
 
 "custom_controls.button_menu.add_subbutton" = "Thêm phím phụ";
+"custom_controls.button_menu.copy_suffix" = " (bản sao)";
 "custom_controls.control_menu.discard_changes" = "Hủy bỏ thay đổi";
 "custom_controls.control_menu.exit" = "Thoát";
 "custom_controls.control_menu.exit.warn" = "Bạn sẽ thoát mà không lưu thay đổi.";
@@ -166,10 +171,14 @@
 "preference.title.renderer.release.gl4es" = "gl4es Thần Thánh";
 "preference.title.renderer.release.angle" = "GÓC";
 "preference.title.renderer.release.zink" = "Kẽm";
+"preference.title.renderer.release.ng_gl4es" = "NG-GL4ES";
+"preference.title.renderer.release.mg" = "MobileGlues";
 
 "preference.title.renderer.debug.auto" = "Tự động: gl4es hoặc ANGLE";
 "preference.title.renderer.debug.gl4es" = "gl4es 1.1.4 - xuất ra OpenGL 2.1";
 "preference.title.renderer.debug.angle" = "tinygl4angle (1.17+) - xuất ra OpenGL 3.2 (Core Profile, bị giới hạn)";
+"preference.title.renderer.debug.ng_gl4es" = "NG-GL4ES - xuất ra OpenGL 2.1, tối ưu cho A11";
+"preference.title.renderer.debug.mg" = "MobileGlues (1.17+) - xuất ra OpenGL 4.0, THỬ NGHIỆM";
 "preference.title.renderer.debug.zink" = "Zink (Mesa 21.0) - xuất ra OpenGL 4.1";
 
 "preference.detail.renderer" = "Thay đổi kết xuất OpenGL được sử dụng";

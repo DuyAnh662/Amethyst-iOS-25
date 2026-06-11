@@ -199,7 +199,9 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
         // Setup NG-GL4ES environment variables from preferences (configurable settings)
         if ([renderer isEqualToString:@ RENDERER_NAME_NG_GL4ES]) {
             // NG-GL4ES uses LIBGL_* environment variables (same as gl4es)
-            setenv("LIBGL_NOBANNER", getPrefBool(@"ng.nobanner") ? "1" : "0", 1);
+            // Force LIBGL_NOBANNER=1 to work around SIGSEGV in GetHardwareExtensions
+            // on devices where glGetString(GL_EXTENSIONS) returns null (iOS 16.7.16, A11/A12 GPUs)
+            setenv("LIBGL_NOBANNER", "1", 1);
             setenv("LIBGL_NOERROR", getPrefBool(@"ng.noerror") ? "1" : "0", 1);
             setenv("LIBGL_FPS", getPrefBool(@"ng.showfps") ? "1" : "0", 1);
             setenv("LIBGL_VSYNC", getPrefBool(@"ng.vsync") ? "1" : "0", 1);
@@ -217,11 +219,13 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
 
         // Zink/Mesa renderer environment setup (all devices)
         if ([renderer isEqualToString:@ RENDERER_NAME_VK_ZINK]) {
-            setenv("MESA_GL_VERSION_OVERRIDE", "3.3", 1);
+            setenv("MESA_GL_VERSION_OVERRIDE", "4.1", 1);
+            setenv("MESA_GLSL_VERSION_OVERRIDE", "410", 1);
             setenv("MESA_EXTENSION_MAX_YEAR", "2013", 1);
             setenv("mesa_glthread", "true", 1);
             setenv("GALLIUM_DRIVER", "zink", 1);
             setenv("MESA_GLSL_CACHE_MAX_SIZE", "64", 1);
+            setenv("GALLIUM_DRAW_START_MAX", "1", 1);
             NSLog(@"[JavaLauncher] Zink/Mesa renderer environment set");
         }
 

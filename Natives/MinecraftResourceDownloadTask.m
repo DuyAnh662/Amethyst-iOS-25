@@ -316,7 +316,10 @@
 - (BOOL)checkAccessWithDialog:(BOOL)show {
     // for now
     NSString *username = BaseAuthenticator.current.authData[@"username"];
-    BOOL accessible = [username hasPrefix:@"Demo."] || BaseAuthenticator.current.authData[@"xboxGamertag"] != nil || [username isEqualToString:@"InternalData"];
+    BOOL accessible = [username hasPrefix:@"Demo."] ||
+                      BaseAuthenticator.current.authData[@"xboxGamertag"] != nil ||
+                      [username isEqualToString:@"InternalData"] ||
+                      [BaseAuthenticator.current isKindOfClass:[LocalAuthenticator class]];
     if (!accessible) {
         [self.progress cancel];
         if (show) {

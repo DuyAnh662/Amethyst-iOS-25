@@ -252,8 +252,16 @@ static WFWorkflowProgressView* currentProgressView;
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:NO];
     if (indexPath.section == 0) {
+        NSInteger minVer = 8;
+        if (indexPath.row == 1) {
+            minVer = 17;
+        } else if (indexPath.row == 2) {
+            minVer = 21;
+        } else if (indexPath.row == 3) {
+            minVer = 25;
+        }
         [self tableView:tableView openPickerAtIndexPath:indexPath
-            minVersion:(indexPath.row==1 ? 17 : 8)];
+            minVersion:minVer];
         return;
     } else if (self.sortedJavaVersions[indexPath.section].intValue == INVALID_JRE) {
         // TODO: do something, like alert explaining that the runtime has missing files

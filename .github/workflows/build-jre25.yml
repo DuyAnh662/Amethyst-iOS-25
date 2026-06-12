@@ -45,19 +45,17 @@ jobs:
         run: |
           cd jre-build
 
-          # Override clone script for JDK 25
-          cat > 5_clonejdk.sh << 'CLONE_EOF'
-#!/bin/bash
-set -e
-git clone --branch jdk-25-ga --depth 1 https://github.com/openjdk/jdk25u openjdk-25
-CLONE_EOF
+          # Override clone script for JDK 25 (use printf to avoid YAML heredoc issues)
+          printf '%s\n' '#!/bin/bash' 'set -e' \
+            'git clone --branch jdk-25-ga --depth 1 https://github.com/openjdk/jdk25u openjdk-25' \
+            > 5_clonejdk.sh
 
           # Create patches dir for JDK 25, copy JDK 21 iOS patches as base
           mkdir -p patches/jre_25/ios
           cp patches/jre_21/ios/jdk21u_ios.diff patches/jre_25/ios/jdk25u_ios.diff
 
           # Allow TARGET_VERSION=25 in scripts
-          sed -i '' 's/if \[\[ \$TARGET_VERSION -eq 21 \]\].*/if [[ $TARGET_VERSION -eq 25 ]] || [[ $TARGET_VERSION -eq 21 ]]; then\n    true/' 2_ci_build_global.sh
+          sed -i '' 's/if \[\[ \$TARGET_VERSION -eq 21 \]\].*/if [[ $TARGET_VERSION -eq 25 ]] || [[ $TARGET_VERSION -eq 21 ]]; then true/' 2_ci_build_global.sh
 
           echo "=== 5_clonejdk.sh ==="
           cat 5_clonejdk.sh

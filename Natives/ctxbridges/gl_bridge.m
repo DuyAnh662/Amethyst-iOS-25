@@ -35,6 +35,29 @@ void dlsym_EGL() {
     handle.eglGetCurrentSurface = dlsym(dl_handle, "eglGetCurrentSurface");
 }
 
+void gl_redispatch() {
+    handle.eglBindAPI = dlsym(RTLD_DEFAULT, "eglBindAPI");
+    handle.eglChooseConfig = dlsym(RTLD_DEFAULT, "eglChooseConfig");
+    handle.eglCreateContext = dlsym(RTLD_DEFAULT, "eglCreateContext");
+    handle.eglCreateWindowSurface = dlsym(RTLD_DEFAULT, "eglCreateWindowSurface");
+    handle.eglCreatePbufferSurface = dlsym(RTLD_DEFAULT, "eglCreatePbufferSurface");
+    handle.eglDestroyContext = dlsym(RTLD_DEFAULT, "eglDestroyContext");
+    handle.eglDestroySurface = dlsym(RTLD_DEFAULT, "eglDestroySurface");
+    handle.eglGetConfigAttrib = dlsym(RTLD_DEFAULT, "eglGetConfigAttrib");
+    handle.eglGetCurrentContext = dlsym(RTLD_DEFAULT, "eglGetCurrentContext");
+    handle.eglGetDisplay = dlsym(RTLD_DEFAULT, "eglGetDisplay");
+    handle.eglGetError = dlsym(RTLD_DEFAULT, "eglGetError");
+    handle.eglGetPlatformDisplay = dlsym(RTLD_DEFAULT, "eglGetPlatformDisplay");
+    handle.eglInitialize = dlsym(RTLD_DEFAULT, "eglInitialize");
+    handle.eglMakeCurrent = dlsym(RTLD_DEFAULT, "eglMakeCurrent");
+    handle.eglSwapBuffers = dlsym(RTLD_DEFAULT, "eglSwapBuffers");
+    handle.glGetErrorClear = dlsym(RTLD_DEFAULT, "glGetError");
+    handle.eglReleaseThread = dlsym(RTLD_DEFAULT, "eglReleaseThread");
+    handle.eglSwapInterval = dlsym(RTLD_DEFAULT, "eglSwapInterval");
+    handle.eglTerminate = dlsym(RTLD_DEFAULT, "eglTerminate");
+    handle.eglGetCurrentSurface = dlsym(RTLD_DEFAULT, "eglGetCurrentSurface");
+}
+
 static bool gl_init() {
     dlsym_EGL();
 

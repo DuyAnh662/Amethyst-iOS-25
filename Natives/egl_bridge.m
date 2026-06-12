@@ -88,6 +88,11 @@ int pojavInitOpenGL() {
         }
         JNI_LWJGL_changeRenderer(renderer.UTF8String);
         dlopen([NSString stringWithFormat:@"@rpath/%@", renderer].UTF8String, RTLD_GLOBAL);
+        // Re-resolve EGL function pointers from the default search path so that
+        // any wrappers exported by the renderer (e.g. ng-gl4es's AliasExport for
+        // eglMakeCurrent, eglGetCurrentContext, etc.) are picked up. Without this,
+        // the bridge calls ANGLE directly, bypassing renderer context tracking.
+        gl_redispatch();
         // Destroy temp PBuffer context/surface. Since it uses a PBuffer surface
         // (not the CAMetalLayer), the real window surface creation in
         // pojavCreateContext will work cleanly.
@@ -123,8 +128,9 @@ int pojavInitOpenGL() {
     // Preload renderer library
     dlopen([NSString stringWithFormat:@"@rpath/%@", renderer].UTF8String, RTLD_GLOBAL);
 
-    return !br_init();
-    //return 0;
+    bool initOk = br_init();
+    gl_redispatch();
+    return !initOk;
 }
 
 void pojavSetWindowHint(int hint, int value) {

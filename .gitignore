@@ -15,4 +15,4 @@ project.xcworkspace/
 /Natives/config.h
 entitlements.codesign.xml
 
-Amethyst-iOS-25/
+Amethyst-iOS-25/*.ipa

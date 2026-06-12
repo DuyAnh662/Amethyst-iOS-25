@@ -13,6 +13,9 @@ static egl_library handle;
 static gl_render_window_t* lastCreatedContext;
 static void* g_angleHandle;
 
+// Real ANGLE eglGetCurrentContext function pointer (used by our interposing wrapper)
+static EGLContext (*real_eglGetCurrentContext)(void);
+
 void dlsym_EGL() {
     g_angleHandle = dlopen("@rpath/libtinygl4angle.dylib", RTLD_GLOBAL);
     assert(g_angleHandle);
@@ -36,6 +39,27 @@ void dlsym_EGL() {
     handle.eglSwapInterval = dlsym(g_angleHandle, "eglSwapInterval");
     handle.eglTerminate = dlsym(g_angleHandle, "eglTerminate");
     handle.eglGetCurrentSurface = dlsym(g_angleHandle, "eglGetCurrentSurface");
+
+    // Store real ANGLE eglGetCurrentContext for our interposing wrapper
+    real_eglGetCurrentContext = handle.eglGetCurrentContext;
+}
+
+// Interpose eglGetCurrentContext so that LWJGL's GL.createCapabilities()
+// can find a current context when called from the render thread even though
+// the EGL context was created and bound on the launcher thread.
+// Our symbol in the main executable shadows the ANGLE/NG-GL4ES symbols.
+EGLContext eglGetCurrentContext(void) {
+    EGLContext ctx = real_eglGetCurrentContext();
+    if (ctx == EGL_NO_CONTEXT && lastCreatedContext != NULL) {
+        NSLog(@"EGLBridge: interposing eglGetCurrentContext - "
+              "auto-binding lastCreatedContext=%p on thread %p",
+              lastCreatedContext, pthread_self());
+        gl_make_current(lastCreatedContext);
+        ctx = real_eglGetCurrentContext();
+        NSLog(@"EGLBridge: interposing eglGetCurrentContext - "
+              "after auto-bind ctx=%p", ctx);
+    }
+    return ctx;
 }
 
 static void* dlsym_or_skip(void* lib, const char* name, void* fallback) {

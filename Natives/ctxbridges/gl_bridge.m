@@ -46,6 +46,8 @@ void gl_set_last_created_context(gl_render_window_t* ctx) {
     lastCreatedContext = ctx;
 }
 
+void gl_make_current(gl_render_window_t* bundle);
+
 void* gl_get_current_context(void) {
     if (currentBundle == NULL && lastCreatedContext != NULL) {
         // No context current on this thread, but we have a last-created context.

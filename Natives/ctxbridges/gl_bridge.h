@@ -37,5 +37,5 @@ typedef struct {
 } gl_render_window_t;
 
 void gl_destroy_context_only(gl_render_window_t* bundle);
-void gl_redispatch(void);
+void gl_redispatch(void* lib);
 void set_gl_bridge_tbl();

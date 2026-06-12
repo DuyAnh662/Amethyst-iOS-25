@@ -87,12 +87,14 @@ int pojavInitOpenGL() {
             }
         }
         JNI_LWJGL_changeRenderer(renderer.UTF8String);
-        dlopen([NSString stringWithFormat:@"@rpath/%@", renderer].UTF8String, RTLD_GLOBAL);
-        // Re-resolve EGL function pointers from the default search path so that
+        void* renderer_handle = dlopen([NSString stringWithFormat:@"@rpath/%@", renderer].UTF8String, RTLD_GLOBAL);
+        // Re-resolve EGL function pointers from the renderer's dlopen handle so that
         // any wrappers exported by the renderer (e.g. ng-gl4es's AliasExport for
         // eglMakeCurrent, eglGetCurrentContext, etc.) are picked up. Without this,
         // the bridge calls ANGLE directly, bypassing renderer context tracking.
-        gl_redispatch();
+        // We cannot use RTLD_DEFAULT here because on iOS it searches in load order
+        // and ANGLE (loaded first) shadows the renderer's aliased symbols.
+        gl_redispatch(renderer_handle);
         // Destroy temp PBuffer context/surface. Since it uses a PBuffer surface
         // (not the CAMetalLayer), the real window surface creation in
         // pojavCreateContext will work cleanly.
@@ -126,10 +128,10 @@ int pojavInitOpenGL() {
     }
     JNI_LWJGL_changeRenderer(renderer.UTF8String);
     // Preload renderer library
-    dlopen([NSString stringWithFormat:@"@rpath/%@", renderer].UTF8String, RTLD_GLOBAL);
+    void* renderer_handle = dlopen([NSString stringWithFormat:@"@rpath/%@", renderer].UTF8String, RTLD_GLOBAL);
 
     bool initOk = br_init();
-    gl_redispatch();
+    gl_redispatch(renderer_handle);
     return !initOk;
 }
 

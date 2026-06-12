@@ -245,6 +245,10 @@ gl_render_window_t* gl_init_pbuffer_context() {
         return NULL;
     }
 
+    NSString *renderer = NSProcessInfo.processInfo.environment[@"POJAV_RENDERER"];
+    BOOL useDesktopGL = [renderer isEqualToString:@ RENDERER_NAME_MTL_ANGLE]
+                     || [renderer isEqualToString:@ RENDERER_NAME_NG_GL4ES];
+
     const EGLint attribs[] = {
         EGL_RED_SIZE, 8,
         EGL_GREEN_SIZE, 8,
@@ -252,7 +256,7 @@ gl_render_window_t* gl_init_pbuffer_context() {
         EGL_ALPHA_SIZE, 8,
         EGL_DEPTH_SIZE, 24,
         EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
-        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
+        EGL_RENDERABLE_TYPE, useDesktopGL ? EGL_OPENGL_BIT : EGL_OPENGL_ES3_BIT,
         EGL_NONE
     };
 
@@ -265,8 +269,15 @@ gl_render_window_t* gl_init_pbuffer_context() {
     assert(bundle->config);
     assert(num_configs > 0);
 
-    if (!handle.eglBindAPI(EGL_OPENGL_ES_API)) {
-        NSDebugLog(@"EGLBridge: eglBindAPI failed for PBuffer: 0x%x", handle.eglGetError());
+    if (useDesktopGL) {
+        NSDebugLog(@"EGLBridge: Binding PBuffer to desktop OpenGL");
+        if (!handle.eglBindAPI(EGL_OPENGL_API)) {
+            NSDebugLog(@"EGLBridge: eglBindAPI(OPENGL_API) failed for PBuffer: 0x%x", handle.eglGetError());
+        }
+    } else {
+        if (!handle.eglBindAPI(EGL_OPENGL_ES_API)) {
+            NSDebugLog(@"EGLBridge: eglBindAPI failed for PBuffer: 0x%x", handle.eglGetError());
+        }
     }
 
     const EGLint pbAttribs[] = {

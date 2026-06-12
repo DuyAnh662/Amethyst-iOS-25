@@ -44,6 +44,9 @@ void dlsym_EGL() {
     real_eglGetCurrentContext = handle.eglGetCurrentContext;
 }
 
+// Forward declarations
+void gl_make_current(gl_render_window_t* bundle);
+
 // Interpose eglGetCurrentContext so that LWJGL's GL.createCapabilities()
 // can find a current context when called from the render thread even though
 // the EGL context was created and bound on the launcher thread.
@@ -70,8 +73,6 @@ static void* dlsym_or_skip(void* lib, const char* name, void* fallback) {
 void gl_set_last_created_context(gl_render_window_t* ctx) {
     lastCreatedContext = ctx;
 }
-
-void gl_make_current(gl_render_window_t* bundle);
 
 void* gl_get_current_context(void) {
     if (currentBundle == NULL && lastCreatedContext != NULL) {

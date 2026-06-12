@@ -123,7 +123,8 @@ gl_render_window_t* gl_init_context(gl_render_window_t *share) {
     }
 
     NSString *renderer = NSProcessInfo.processInfo.environment[@"POJAV_RENDERER"];
-    BOOL angleDesktopGL = [renderer isEqualToString:@ RENDERER_NAME_MTL_ANGLE];
+    BOOL useDesktopGL = [renderer isEqualToString:@ RENDERER_NAME_MTL_ANGLE]
+                     || [renderer isEqualToString:@ RENDERER_NAME_NG_GL4ES];
 
     const EGLint attribs[] = {
         EGL_RED_SIZE, 8,
@@ -132,7 +133,7 @@ gl_render_window_t* gl_init_context(gl_render_window_t *share) {
         EGL_ALPHA_SIZE, 8,
         EGL_DEPTH_SIZE, 24,
         EGL_SURFACE_TYPE, EGL_WINDOW_BIT|EGL_PBUFFER_BIT,
-        EGL_RENDERABLE_TYPE, angleDesktopGL ? EGL_OPENGL_BIT : EGL_OPENGL_ES3_BIT,
+        EGL_RENDERABLE_TYPE, useDesktopGL ? EGL_OPENGL_BIT : EGL_OPENGL_ES3_BIT,
         EGL_NONE
     };
 
@@ -153,7 +154,7 @@ gl_render_window_t* gl_init_context(gl_render_window_t *share) {
     }
 
     EGLBoolean bindResult;
-    if (angleDesktopGL) {
+    if (useDesktopGL) {
         NSDebugLog(@"EGLBridge: Binding to desktop OpenGL");
         bindResult = handle.eglBindAPI(EGL_OPENGL_API);
     } else {

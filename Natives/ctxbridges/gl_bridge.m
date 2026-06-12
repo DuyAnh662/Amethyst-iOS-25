@@ -203,6 +203,25 @@ void gl_make_current(gl_render_window_t* bundle) {
         if (handle.glGetErrorClear) {
             while (handle.glGetErrorClear() != 0);
         }
+        // Debug: test glGetString directly to see if NG-GL4ES sees the context
+        typedef const unsigned char* (*glGetString_t)(unsigned int);
+        glGetString_t glGetStringD = dlsym(RTLD_DEFAULT, "glGetString");
+        if (glGetStringD) {
+            const unsigned char* ver = glGetStringD(0x1F02);
+            NSLog(@"EGLBridge: glGetString(GL_VERSION) via RTLD_DEFAULT = %s", ver ? ver : "NULL");
+        }
+        // Also test eglGetCurrentContext from the renderer
+        void* eglCtx = dlsym(RTLD_DEFAULT, "eglGetCurrentContext");
+        if (eglCtx) {
+            void* (*eglGetCurCtx)(void) = eglCtx;
+            void* curCtx = eglGetCurCtx();
+            NSLog(@"EGLBridge: eglGetCurrentContext via RTLD_DEFAULT = %p", curCtx);
+        }
+        // Log our handle.eglGetCurrentContext result too
+        if (handle.eglGetCurrentContext) {
+            void* curCtx = handle.eglGetCurrentContext();
+            NSLog(@"EGLBridge: handle.eglGetCurrentContext = %p", curCtx);
+        }
     } else {
         NSLog(@"EGLBridge: eglMakeCurrent returned with error: 0x%x", handle.eglGetError());
     }

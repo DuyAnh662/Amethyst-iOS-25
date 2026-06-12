@@ -2,6 +2,7 @@
 #import "SurfaceViewController.h"
 
 #include <dlfcn.h>
+#include <pthread.h>
 #include "bridge_tbl.h"
 #include "environ.h"
 #include "gl_bridge.h"
@@ -9,6 +10,7 @@
 
 static EGLDisplay g_EglDisplay;
 static egl_library handle;
+static gl_render_window_t* lastCreatedContext;
 
 void dlsym_EGL() {
     void* dl_handle = dlopen("@rpath/libtinygl4angle.dylib", RTLD_GLOBAL);
@@ -38,6 +40,24 @@ void dlsym_EGL() {
 static void* dlsym_or_skip(void* lib, const char* name, void* fallback) {
     void* sym = dlsym(lib, name);
     return sym ? sym : fallback;
+}
+
+void gl_set_last_created_context(gl_render_window_t* ctx) {
+    lastCreatedContext = ctx;
+}
+
+void* gl_get_current_context(void) {
+    if (currentBundle == NULL && lastCreatedContext != NULL) {
+        // No context current on this thread, but we have a last-created context.
+        // This can happen when LWJGL calls GL.createCapabilities() on the render
+        // thread while the context was created and bound on the launcher thread.
+        // Auto-bind the last created context to this thread (same approach as
+        // Android's fixPojavGLContext() workaround).
+        NSLog(@"EGLBridge: auto-binding lastCreatedContext=%p on thread %p",
+              lastCreatedContext, pthread_self());
+        gl_make_current(lastCreatedContext);
+    }
+    return currentBundle;
 }
 
 void gl_redispatch(void* lib) {
@@ -166,12 +186,16 @@ void gl_make_current(gl_render_window_t* bundle) {
     if(!bundle) {
         if(handle.eglMakeCurrent(g_EglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
             currentBundle = NULL;
+            NSLog(@"EGLBridge: unbound context on thread %p", pthread_self());
         }
         return;
     }
 
+    NSLog(@"EGLBridge: making context current on thread %p, display=%p surface=%p context=%p",
+          pthread_self(), g_EglDisplay, bundle->surface, bundle->context);
     if(handle.eglMakeCurrent(g_EglDisplay, bundle->surface, bundle->surface, bundle->context)) {
         currentBundle = (basic_render_window_t *)bundle;
+        NSLog(@"EGLBridge: context bound OK, currentBundle=%p", currentBundle);
         // Clear any stale GL errors left from NG-GL4ES init (GetHardwareExtensions)
         // to prevent LWJGL's GL.createCapabilities() from rejecting the context.
         if (handle.glGetErrorClear) {

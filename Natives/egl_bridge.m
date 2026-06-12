@@ -38,7 +38,7 @@ void pojavTerminate() {
 }
 
 void* pojavGetCurrentContext() {
-    return br_get_current();
+    return gl_get_current_context();
 }
 
 int pojavInit(BOOL useStackQueue) {
@@ -168,6 +168,7 @@ void* pojavCreateContext(basic_render_window_t* contextSrc) {
     static BOOL inited = NO;
     if (!inited) {
         inited = YES;
+        NSLog(@"[EGL Bridge] First call to pojavCreateContext, calling pojavInitOpenGL");
         pojavInitOpenGL();
     }
 
@@ -191,13 +192,19 @@ void* pojavCreateContext(basic_render_window_t* contextSrc) {
         return (__bridge void *)SurfaceViewController.surface.layer;
     }
 
+    NSLog(@"[EGL Bridge] pojavCreateContext on thread %p", pthread_self());
     basic_render_window_t *ctx = br_init_context(contextSrc);
     // Make the context current immediately after creation. This is needed
     // because LWJGL's Platform.get() returns MACOSX on iOS, which skips
     // the fixPojavGLContext() workaround that Android uses to ensure the
     // context is current before GL.createCapabilities().
     if (ctx) {
+        NSLog(@"[EGL Bridge] Creating context on thread %p", pthread_self());
         br_make_current(ctx);
+        gl_set_last_created_context((gl_render_window_t*)ctx);
+        NSLog(@"[EGL Bridge] Context created and bound on thread %p, ctx=%p", pthread_self(), ctx);
+    } else {
+        NSLog(@"[EGL Bridge] br_init_context returned NULL!");
     }
     return ctx;
 }

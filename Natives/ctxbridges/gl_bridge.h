@@ -38,4 +38,6 @@ typedef struct {
 
 void gl_destroy_context_only(gl_render_window_t* bundle);
 void gl_redispatch(void* lib);
+void gl_set_last_created_context(gl_render_window_t* ctx);
+void* gl_get_current_context(void);
 void set_gl_bridge_tbl();

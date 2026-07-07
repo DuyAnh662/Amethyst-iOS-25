@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-13
 
     steps:
       - name: Checkout repository
@@ -22,36 +22,33 @@ jobs:
       - name: Install dependencies
         run: |
           brew update
-
           brew install \
             cmake \
             ninja \
             pkg-config \
             autoconf \
             automake \
-            libtool \
-            python \
-            openjdk
+            libtool
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '8'
-
-      - name: Install Python dependencies
+      - name: Install JDK 8
         run: |
-          python3 -m pip install --upgrade pip --break-system-packages
+          brew install --cask temurin8
 
-      - name: Prepare build
+      - name: Set Java 8 environment
         run: |
-          chmod +x ./Makefile || true
+          echo "JAVA_HOME=$(/usr/libexec/java_home -v 1.8)" >> $GITHUB_ENV
+          echo "$(/usr/libexec/java_home -v 1.8)/bin" >> $GITHUB_PATH
+
+      - name: Verify Java
+        run: |
+          java -version
+          echo $JAVA_HOME
 
       - name: Build
         run: |
           make
 
-      - name: Upload artifacts
+      - name: Upload build artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:

@@ -4,7 +4,7 @@ This is a build of AngelAuraAmethyst iOS which has been customized to be able to
 
 If anyone can help fix vulkan support in version 2.0.0, that would be greatly appreciated. There is a new post about it in issues.
 
-Compiling does work, and is supported, but is still not reccommended. If you compile, add replace lwjgl.jar in the libs section of the ipa or tipa with the one at the root of this repo.
+Compiling does work, and is supported, but is still not reccommended. If you compile, add replace lwjgl.jar in the libs section of the built ipa or tipa with the one at the root of this repo.
 
 Thanks to vibecodest for the source code!
 ## Third party components and their licenses

@@ -28,7 +28,8 @@ jobs:
             pkg-config \
             autoconf \
             automake \
-            libtool
+            libtool \
+            ldid
 
       - name: Install JDK 8
         run: |

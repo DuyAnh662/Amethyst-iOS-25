@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: recursive
 
@@ -24,7 +24,7 @@ jobs:
 
       # provision the stable zulu jdk 8 runtime environment as structured in the upstream core
       - name: Setup JDK 8 (Zulu)
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         id: setup-java
         with:
           distribution: 'zulu'
@@ -32,7 +32,10 @@ jobs:
 
       # initialize essential building and packaging utilities via homebrew infrastructure
       - name: Install brew dependencies
+        env:
+          HOMEBREW_NO_REQUIRE_TAP_TRUST: 1
         run: |
+          brew untap aws/tap 2>/dev/null || true
           brew update
           brew install make wget ldid
           sudo mkdir -p /usr/local/bin
@@ -41,7 +44,7 @@ jobs:
 
       - name: Cache iOS JREs
         id: cache-jres
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: depends/
           key: amethyst-jres-v1
@@ -93,7 +96,7 @@ jobs:
 
       - name: Upload TrollStore tIPA (full)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: org.angelauramc.amethyst-ios-trollstore
           path: artifacts/org.angelauramc.amethyst-*-ios-trollstore.tipa
@@ -103,7 +106,7 @@ jobs:
 
       - name: Upload TrollStore tIPA (slimmed)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: org.angelauramc.amethyst-ios-trollstore-slimmed
           path: artifacts/org.angelauramc.amethyst.slimmed-*-ios-trollstore.tipa
@@ -113,7 +116,7 @@ jobs:
 
       - name: Upload regular IPA (full)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: org.angelauramc.amethyst-ios
           path: artifacts/org.angelauramc.amethyst-*-ios.ipa
@@ -123,7 +126,7 @@ jobs:
 
       - name: Upload regular IPA (slimmed)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: org.angelauramc.amethyst-ios-slimmed
           path: artifacts/org.angelauramc.amethyst.slimmed-*-ios.ipa
@@ -133,7 +136,7 @@ jobs:
 
       - name: Upload AngelAuraAmethyst.dSYM
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: AngelAuraAmethyst.dSYM
           path: artifacts/AngelAuraAmethyst.dSYM
@@ -144,7 +147,7 @@ jobs:
       # extract local compilation cmake diagnostic records upon unexpected pipeline failure
       - name: Upload build logs on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: build-logs
           path: |
